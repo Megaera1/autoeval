@@ -1,0 +1,92 @@
+{
+  "formType": "adulte",
+  "title": "Anamnèse Neuropsychologique — Adulte",
+  "description": "Ce formulaire est destiné à recueillir votre historique médical et personnel avant votre bilan. Toutes les informations sont strictement confidentielles.",
+  "ageRange": "19-64 ans",
+  "sections": [
+    {
+      "id": "motif_section",
+      "title": "Motif de consultation",
+      "fields": [
+        {"id": "motif_consultation", "type": "textarea", "label": "Motif de consultation", "required": true, "placeholder": "Décrivez le motif de votre consultation…", "description": "Plaintes principales qui vous amènent à consulter."}
+      ]
+    },
+    {
+      "id": "antecedents_section",
+      "title": "Antécédents médicaux",
+      "fields": [
+        {"id": "antecedents_medicaux",  "type": "textarea", "label": "Antécédents médicaux personnels", "placeholder": "Maladies, hospitalisations, chirurgies…",       "description": "Listez vos antécédents médicaux significatifs."},
+        {"id": "antecedents_familiaux", "type": "textarea", "label": "Antécédents familiaux",            "placeholder": "Maladies neurologiques ou psychiatriques dans la famille…", "description": "Maladies neurologiques, psychiatriques ou génétiques dans la famille proche."}
+      ]
+    },
+    {
+      "id": "traitements_section",
+      "title": "Traitements en cours",
+      "fields": [
+        {"id": "traitements_en_cours", "type": "textarea", "label": "Traitements en cours", "placeholder": "Médicaments, posologie…", "description": "Listez tous vos traitements actuels (nom, dosage)."}
+      ]
+    },
+    {
+      "id": "parcours_section",
+      "title": "Parcours scolaire et professionnel",
+      "fields": [
+        {"id": "niveau_etudes", "type": "select", "label": "Niveau d'études", "options": [
+          {"value": "sans_diplome",  "label": "Sans diplôme"},
+          {"value": "brevet_bep_cap","label": "Brevet / BEP / CAP"},
+          {"value": "baccalaureat", "label": "Baccalauréat"},
+          {"value": "bac_plus_2",   "label": "Bac +2 / BTS / DUT"},
+          {"value": "licence",      "label": "Licence (Bac +3)"},
+          {"value": "master",       "label": "Master (Bac +5)"},
+          {"value": "doctorat",     "label": "Doctorat / Bac +8"}
+        ]},
+        {"id": "precision_etudes", "type": "textarea", "label": "Précisions sur la scolarité", "placeholder": "Difficultés scolaires, redoublements, filière…"}
+      ]
+    },
+    {
+      "id": "situation_section",
+      "title": "Situation actuelle",
+      "fields": [
+        {"id": "situation_professionnelle", "type": "select", "label": "Situation professionnelle", "options": [
+          {"value": "en_activite",     "label": "En activité"},
+          {"value": "arret_travail",   "label": "Arrêt de travail"},
+          {"value": "invalidite",      "label": "Invalidité"},
+          {"value": "recherche_emploi","label": "Recherche d'emploi"},
+          {"value": "retraite",        "label": "Retraité(e)"},
+          {"value": "etudiant",        "label": "Étudiant(e)"},
+          {"value": "sans_activite",   "label": "Sans activité"}
+        ]},
+        {"id": "situation_familiale", "type": "select", "label": "Situation familiale", "options": [
+          {"value": "celibataire", "label": "Célibataire"},
+          {"value": "en_couple",   "label": "En couple"},
+          {"value": "marie",       "label": "Marié(e)"},
+          {"value": "divorce",     "label": "Divorcé(e)"},
+          {"value": "veuf",        "label": "Veuf/Veuve"}
+        ]}
+      ]
+    },
+    {
+      "id": "cognitif_section",
+      "title": "Plaintes cognitives",
+      "fields": [
+        {"id": "plaintes_cognitives", "type": "textarea", "label": "Plaintes cognitives actuelles", "placeholder": "Troubles de mémoire, attention, orientation, langage…", "description": "Décrivez les difficultés cognitives qui vous préoccupent."}
+      ]
+    },
+    {
+      "id": "qualite_vie_section",
+      "title": "Qualité de vie",
+      "fields": [
+        {"id": "sommeil", "type": "select", "label": "Qualité du sommeil", "options": [
+          {"value": "normal",   "label": "Normal"},
+          {"value": "perturbe", "label": "Perturbé"},
+          {"value": "insomnie", "label": "Insomnie"}
+        ]},
+        {"id": "precision_sommeil", "type": "textarea", "label": "Précisions sur le sommeil", "placeholder": "Durée, réveils nocturnes, apnée…"},
+        {"id": "lateralite", "type": "select", "label": "Latéralité", "options": [
+          {"value": "droitier",    "label": "Droitier(ère)"},
+          {"value": "gaucher",     "label": "Gaucher(ère)"},
+          {"value": "ambidextre",  "label": "Ambidextre"}
+        ]}
+      ]
+    }
+  ]
+}

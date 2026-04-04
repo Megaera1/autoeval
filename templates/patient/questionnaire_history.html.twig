@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Historique — {{ questionnaire.title }} - AutoEval{% endblock %}
+
+{% block body %}
+    <h1>Historique : {{ questionnaire.title }}</h1>
+
+    {% if responses is empty %}
+        <p>Aucune passation enregistrée.</p>
+    {% else %}
+        <table border="1" cellpadding="8" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Commencé le</th>
+                    <th>Terminé le</th>
+                    <th>Statut</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in responses %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ r.startedAt|date('d/m/Y à H:i') }}</td>
+                        <td>{{ r.completedAt ? r.completedAt|date('d/m/Y à H:i') : '—' }}</td>
+                        <td>
+                            {% if r.isComplete %}
+                                <span style="color: green;">Terminé</span>
+                            {% else %}
+                                <span style="color: orange;">En cours</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ r.score is not null ? r.score : '—' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <p>
+        <a href="{{ path('app_patient_questionnaire_fill', {slug: questionnaire.slug}) }}">Passer le questionnaire</a>
+        | <a href="{{ path('app_patient_questionnaires') }}">Retour à la liste</a>
+    </p>
+{% endblock %}

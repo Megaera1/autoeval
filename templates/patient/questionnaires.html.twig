@@ -1,0 +1,146 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes questionnaires — AutoEval{% endblock %}
+
+{% block navbar %}
+<header class="navbar navbar-expand-md navbar-dark bg-blue-lt d-print-none">
+    <div class="container-xl">
+        <a href="{{ path('app_home') }}" class="navbar-brand navbar-brand-autodark">
+            <strong>AutoEval</strong>
+        </a>
+        <div class="navbar-nav ms-auto d-flex align-items-center gap-3">
+            <span class="text-white">{{ app.user.firstName }}</span>
+            <a href="{{ path('app_logout') }}" class="btn btn-outline-light btn-sm">Déconnexion</a>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+.passation-list { border-top: 1px solid #e6e7e9; }
+.passation-item {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .6rem 1.25rem; border-bottom: 1px solid #f0f0f0;
+    font-size: .88rem;
+}
+.passation-item:last-child { border-bottom: none; }
+.passation-date { color: #6c757d; min-width: 100px; }
+.passation-score { color: #2c7be5; font-weight: 600; min-width: 80px; }
+.passation-inprogress { background: #fffbf0; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="page-header mt-4">
+    <div class="row align-items-center">
+        <div class="col">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ path('app_patient_dashboard') }}">Tableau de bord</a></li>
+                <li class="breadcrumb-item active">Mes questionnaires</li>
+            </ol>
+            <h2 class="page-title">Mes questionnaires</h2>
+        </div>
+    </div>
+</div>
+
+{% for message in app.flashes('success') %}
+    <div class="alert alert-success alert-dismissible mt-3" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+{% endfor %}
+
+{% if items is empty %}
+<div class="card mt-4">
+    <div class="card-body text-center py-5">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clipboard-list mb-3 text-muted" width="48" height="48" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="2"/>
+            <line x1="9" y1="12" x2="9.01" y2="12"/>
+            <line x1="13" y1="12" x2="15" y2="12"/>
+            <line x1="9" y1="16" x2="9.01" y2="16"/>
+            <line x1="13" y1="16" x2="15" y2="16"/>
+        </svg>
+        <p class="text-muted mb-0">Votre neuropsychologue vous assignera bientôt des questionnaires.</p>
+    </div>
+</div>
+{% else %}
+
+{% set currentCategory = null %}
+{% for item in items %}
+    {% set q          = item.questionnaire %}
+    {% set inProgress = item.inProgress %}
+    {% set responses  = item.responses %}
+    {% set completed  = responses|filter(r => r.isComplete)|sort((a, b) => b.completedAt <=> a.completedAt) %}
+
+    {% if q.category != currentCategory %}
+        {% if currentCategory is not null %}</div>{% endif %}
+        {% set currentCategory = q.category %}
+        <h4 class="mt-4 mb-2 text-muted fw-semibold" style="font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;">
+            {{ q.category ?? 'Questionnaires' }}
+        </h4>
+        <div class="row row-cards">
+    {% endif %}
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            {# ── En-tête de la carte ── #}
+            <div class="card-header d-flex align-items-center gap-2 py-2">
+                <span class="fw-semibold flex-grow-1" style="font-size:.93rem;">{{ q.title }}</span>
+                <a href="{{ path('app_patient_questionnaire_new', {slug: q.slug}) }}"
+                   class="btn btn-sm btn-primary flex-shrink-0"
+                   title="Démarrer une nouvelle passation">
+                    + Nouvelle passation
+                </a>
+            </div>
+
+            {# ── Passation en cours ── #}
+            {% if inProgress %}
+            <div class="passation-item passation-inprogress">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock me-1 text-warning" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+                <span class="text-warning fw-semibold">En cours</span>
+                <span class="passation-date ms-1">depuis le {{ inProgress.startedAt|date('d/m/Y') }}</span>
+                <a href="{{ path('app_patient_questionnaire_fill', {slug: q.slug, responseId: inProgress.id}) }}"
+                   class="btn btn-sm btn-warning ms-auto">Reprendre</a>
+            </div>
+            {% endif %}
+
+            {# ── Passations terminées ── #}
+            {% if completed|length > 0 %}
+            <div class="passation-list">
+                {% for r in completed %}
+                <div class="passation-item">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-circle-check text-success flex-shrink-0" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2l4 -4"/></svg>
+                    <span class="passation-date">{{ r.completedAt ? r.completedAt|date('d/m/Y') : r.startedAt|date('d/m/Y') }}</span>
+                    {% if r.score is not null %}
+                        <span class="passation-score">Score : {{ r.score }}</span>
+                    {% else %}
+                        <span class="passation-score text-muted">—</span>
+                    {% endif %}
+                    <a href="{{ path('app_patient_questionnaire_fill', {slug: q.slug, responseId: r.id}) }}"
+                       class="btn btn-sm btn-outline-secondary ms-auto">Consulter</a>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {# ── Aucune passation ── #}
+            {% if not inProgress and completed|length == 0 %}
+            <div class="card-body text-center text-muted py-4" style="font-size:.88rem;">
+                Aucune passation pour l'instant.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+{% endfor %}
+{% if currentCategory is not null %}</div>{% endif %}
+
+{% endif %}
+
+<div class="mt-4">
+    <a href="{{ path('app_patient_dashboard') }}" class="btn btn-outline-secondary btn-sm">← Retour au tableau de bord</a>
+</div>
+{% endblock %}

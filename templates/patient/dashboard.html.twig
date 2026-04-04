@@ -1,0 +1,163 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon espace — AutoEval{% endblock %}
+
+{% block navbar %}
+<header class="navbar navbar-expand-md navbar-dark bg-blue-lt d-print-none">
+    <div class="container-xl">
+        <a href="{{ path('app_home') }}" class="navbar-brand navbar-brand-autodark">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brain me-2" width="28" height="28" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M15.5 13a3.5 3.5 0 0 0 -3.5 3.5v1a3.5 3.5 0 0 0 7 0v-1.8"/>
+                <path d="M8.5 13a3.5 3.5 0 0 1 3.5 3.5v1a3.5 3.5 0 0 1 -7 0v-1.8"/>
+                <path d="M17.5 16a3.5 3.5 0 0 0 0 -7h-.5"/>
+                <path d="M19 9.3v-2.8a3.5 3.5 0 0 0 -7 0"/>
+                <path d="M6.5 16a3.5 3.5 0 0 1 0 -7h.5"/>
+                <path d="M5 9.3v-2.8a3.5 3.5 0 0 1 7 0v10"/>
+            </svg>
+            <strong>AutoEval</strong>
+        </a>
+
+        <div class="navbar-nav ms-auto d-flex align-items-center gap-3">
+            <span class="text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <circle cx="12" cy="7" r="4"/>
+                    <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+                </svg>
+                {{ app.user.firstName }}
+            </span>
+            <a href="{{ path('app_logout') }}" class="btn btn-outline-light btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-logout me-1" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/>
+                    <path d="M9 12h12l-3 -3"/>
+                    <path d="M18 15l3 -3"/>
+                </svg>
+                Déconnexion
+            </a>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block body %}
+<div class="page-header mt-4">
+    <div class="row align-items-center">
+        <div class="col">
+            <h2 class="page-title">
+                Bonjour, {{ app.user.firstName }}
+            </h2>
+            <div class="text-muted mt-1">Votre espace de préparation au bilan neuropsychologique</div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cards mt-3">
+
+    {# Carte Anamnèse #}
+    <div class="col-md-6">
+        <div class="card card-md h-100">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="bg-blue text-white rounded p-2 me-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-text" width="28" height="28" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+                            <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                            <line x1="9" y1="9" x2="10" y2="9"/>
+                            <line x1="9" y1="13" x2="15" y2="13"/>
+                            <line x1="9" y1="17" x2="15" y2="17"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <h3 class="card-title mb-0">Mon anamnèse</h3>
+                        {% if anamnesis.isComplete %}
+                            <span class="badge bg-success-lt text-success">Complète</span>
+                        {% elseif anamnesis.data is not empty %}
+                            <span class="badge bg-warning-lt text-warning">En cours</span>
+                        {% else %}
+                            <span class="badge bg-secondary-lt text-secondary">Non commencée</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <p class="text-muted flex-grow-1">
+                    Renseignez vos antécédents et vos plaintes actuelles.
+                    {% if anamnesis.updatedAt %}
+                        <br><small>Dernière modification : {{ anamnesis.updatedAt|date('d/m/Y à H:i') }}</small>
+                    {% endif %}
+                </p>
+
+                <a href="{{ path('app_patient_anamnesis') }}" class="btn btn-primary mt-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrow-right me-1" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                    Accéder
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {# Carte Questionnaires #}
+    <div class="col-md-6">
+        <div class="card card-md h-100">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="bg-blue text-white rounded p-2 me-3 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clipboard-list" width="28" height="28" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/>
+                            <rect x="9" y="3" width="6" height="4" rx="2"/>
+                            <line x1="9" y1="12" x2="9.01" y2="12"/>
+                            <line x1="13" y1="12" x2="15" y2="12"/>
+                            <line x1="9" y1="16" x2="9.01" y2="16"/>
+                            <line x1="13" y1="16" x2="15" y2="16"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <h3 class="card-title mb-0">Mes questionnaires</h3>
+                        <div class="d-flex gap-2 mt-1">
+                            {% if availableCount > 0 %}
+                                <span class="badge bg-blue-lt text-blue">{{ availableCount }} assigné{{ availableCount > 1 ? 's' : '' }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary-lt text-secondary">Aucun assigné</span>
+                            {% endif %}
+                            {% if completedCount > 0 %}
+                                <span class="badge bg-success-lt text-success">{{ completedCount }} complété{{ completedCount > 1 ? 's' : '' }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-muted flex-grow-1">
+                    Complétez les échelles qui vous ont été assignées avant votre bilan.
+                </p>
+
+                <a href="{{ path('app_patient_questionnaires') }}" class="btn btn-primary mt-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-arrow-right me-1" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                    Accéder
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{# Pied de page discret #}
+<div class="text-center text-muted mt-5 mb-3 small">
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-lock me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <rect x="5" y="11" width="14" height="10" rx="2"/>
+        <circle cx="12" cy="16" r="1"/>
+        <path d="M8 11v-4a4 4 0 0 1 8 0v4"/>
+    </svg>
+    Vos données sont confidentielles et protégées
+</div>
+{% endblock %}

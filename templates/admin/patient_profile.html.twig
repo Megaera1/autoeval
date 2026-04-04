@@ -1,0 +1,1618 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ patient.fullName }} — AutoEval{% endblock %}
+
+{% block navbar %}
+<header class="navbar navbar-expand-md navbar-dark bg-blue d-print-none">
+    <div class="container-xl">
+        <a href="{{ path('app_admin_dashboard') }}" class="navbar-brand navbar-brand-autodark">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brain me-2" width="28" height="28" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M15.5 13a3.5 3.5 0 0 0 -3.5 3.5v1a3.5 3.5 0 0 0 7 0v-1.8"/>
+                <path d="M8.5 13a3.5 3.5 0 0 1 3.5 3.5v1a3.5 3.5 0 0 1 -7 0v-1.8"/>
+                <path d="M17.5 16a3.5 3.5 0 0 0 0 -7h-.5"/>
+                <path d="M19 9.3v-2.8a3.5 3.5 0 0 0 -7 0"/>
+                <path d="M6.5 16a3.5 3.5 0 0 1 0 -7h.5"/>
+                <path d="M5 9.3v-2.8a3.5 3.5 0 0 1 7 0v10"/>
+            </svg>
+            <strong>AutoEval</strong>
+        </a>
+        <div class="navbar-nav ms-auto d-flex align-items-center gap-3">
+            <span class="text-white small">Dr {{ app.user.lastName }}</span>
+            <a href="{{ path('app_logout') }}" class="btn btn-outline-light btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-logout me-1" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/>
+                    <path d="M9 12h12l-3 -3"/><path d="M18 15l3 -3"/>
+                </svg>
+                Déconnexion
+            </a>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+/* Brown ENS specific */
+.ens-meta-block { background:#f0fafa; border-bottom:1px solid #ddd; }
+.ens-cluster-bar { height:14px; border-radius:7px; overflow:hidden; background:#e9ecef; }
+.ens-cluster-bar-fill { height:100%; border-radius:7px; transition:width .4s; }
+.ens-score-low    { background:#28a745; }
+.ens-score-mid    { background:#ffc107; }
+.ens-score-high   { background:#dc3545; }
+.ens-badge-low    { background:#d1e7dd; color:#0a3622; }
+.ens-badge-mid    { background:#fff3cd; color:#664d03; }
+.ens-badge-high   { background:#f8d7da; color:#58151c; }
+/* DIVA specific */
+.diva-score-card { border:1.5px solid #bee3f8; border-radius:8px; padding:.75rem 1rem; }
+.diva-threshold-ok   { background:#d1e7dd; color:#0a3622; }
+.diva-threshold-warn { background:#f8d7da; color:#58151c; }
+.diva-yn-oui { color:#276749; font-weight:700; }
+.diva-yn-non { color:#4a5568; }
+.diva-yn-dash { color:#a0aec0; }
+</style>
+{% endblock %}
+
+{% block body %}
+{# Breadcrumb + en-tête #}
+<div class="page-header mt-3">
+    <div class="row align-items-center">
+        <div class="col">
+            <ol class="breadcrumb" aria-label="breadcrumbs">
+                <li class="breadcrumb-item">
+                    <a href="{{ path('app_admin_dashboard') }}">Tableau de bord</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">{{ patient.fullName }}</li>
+            </ol>
+            <div class="d-flex align-items-center justify-content-between">
+                <h2 class="page-title mt-1">{{ patient.fullName }}</h2>
+                <a href="{{ path('app_admin_patient_export', {id: patient.id}) }}"
+                   class="btn btn-outline-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-download me-1" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"/>
+                        <polyline points="7 11 12 16 17 11"/>
+                        <line x1="12" y1="4" x2="12" y2="16"/>
+                    </svg>
+                    Télécharger le dossier (.txt)
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Informations personnelles #}
+<div class="card mt-3">
+    <div class="card-header bg-blue-lt">
+        <h3 class="card-title">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-id-badge me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <rect x="4" y="3" width="16" height="18" rx="2"/>
+                <circle cx="12" cy="10" r="3"/>
+                <line x1="8" y1="21" x2="8" y2="17"/>
+                <line x1="16" y1="21" x2="16" y2="17"/>
+                <path d="M8 17a4 4 0 0 1 8 0"/>
+            </svg>
+            Informations personnelles
+        </h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted">Nom</dt>
+                    <dd class="col-7">{{ patient.lastName }}</dd>
+                    <dt class="col-5 text-muted">Prénom</dt>
+                    <dd class="col-7">{{ patient.firstName }}</dd>
+                    <dt class="col-5 text-muted">Date de naissance</dt>
+                    <dd class="col-7">{{ patient.birthDate ? patient.birthDate|date('d/m/Y') : '—' }}</dd>
+                    <dt class="col-5 text-muted">Âge actuel</dt>
+                    <dd class="col-7">
+                        {% set currentAge = patient.currentAge %}
+                        {{ currentAge is not null ? currentAge ~ ' ans' : (patient.age ? patient.age ~ ' ans (saisi)' : '—') }}
+                    </dd>
+                    <dt class="col-5 text-muted">Genre</dt>
+                    <dd class="col-7">{{ patient.gender ?? '—' }}</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted">Email</dt>
+                    <dd class="col-7">
+                        <span class="badge bg-blue-lt text-blue">{{ patient.email }}</span>
+                    </dd>
+                    <dt class="col-5 text-muted">Inscription</dt>
+                    <dd class="col-7">{{ patient.createdAt ? patient.createdAt|date('d/m/Y') : '—' }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Assigner des questionnaires #}
+<div class="card mt-4">
+    <div class="card-header bg-blue-lt d-flex align-items-center justify-content-between">
+        <h3 class="card-title mb-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clipboard-check me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/>
+                <rect x="9" y="3" width="6" height="4" rx="2"/>
+                <path d="M9 14l2 2l4 -4"/>
+            </svg>
+            Assigner des questionnaires
+        </h3>
+        <span class="badge bg-blue text-white">{{ assignedIds|length }} assigné{{ assignedIds|length > 1 ? 's' : '' }}</span>
+    </div>
+    <div class="card-body">
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success alert-dismissible" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+
+        <form method="POST" action="{{ path('app_admin_assign_questionnaires', {id: patient.id}) }}">
+            {% if questionnairesGrouped is empty %}
+                <p class="text-muted">Aucun questionnaire disponible dans la base.</p>
+            {% else %}
+                <div class="row g-3">
+                    {% for category, questionnaires in questionnairesGrouped %}
+                    <div class="col-12">
+                        <p class="mb-1 fw-semibold text-uppercase text-muted" style="font-size:.75rem;letter-spacing:.05em;">{{ category }}</p>
+                        <div class="row g-2">
+                            {% for q in questionnaires %}
+                            <div class="col-md-6 col-lg-4">
+                                <label class="form-check p-2 border rounded cursor-pointer {% if q.id in assignedIds %}border-primary bg-blue-lt{% endif %}" style="cursor:pointer;">
+                                    <input class="form-check-input me-2" type="checkbox" name="questionnaires[]" value="{{ q.id }}"
+                                        {% if q.id in assignedIds %}checked{% endif %}>
+                                    <span class="form-check-label" style="font-size:.875rem;">{{ q.title }}</span>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-device-floppy me-1" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2"/>
+                            <circle cx="12" cy="13" r="2"/>
+                            <polyline points="14 4 14 8 8 8 8 4"/>
+                        </svg>
+                        Enregistrer les assignations
+                    </button>
+                </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+{# Anamnèse #}
+<div class="card mt-4">
+    <div class="card-header bg-blue-lt">
+        <h3 class="card-title">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-text me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+                <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/>
+                <line x1="9" y1="9" x2="10" y2="9"/>
+                <line x1="9" y1="13" x2="15" y2="13"/>
+                <line x1="9" y1="17" x2="15" y2="17"/>
+            </svg>
+            Anamnèse
+            {% if anamnesis %}
+                {% if anamnesis.isComplete %}
+                    <span class="badge bg-success-lt text-success ms-2">Complète</span>
+                {% else %}
+                    <span class="badge bg-warning-lt text-warning ms-2">En cours</span>
+                {% endif %}
+            {% endif %}
+        </h3>
+    </div>
+    <div class="card-body">
+        {% if anamnesis and anamnesis.data is not empty %}
+            <div class="d-flex align-items-center gap-3 mb-3">
+                {% if anamnesisDefinition %}
+                    <span class="badge bg-blue-lt text-blue">
+                        {{ anamnesisDefinition.title }} — {{ anamnesisDefinition.ageRange }}
+                    </span>
+                {% endif %}
+                <small class="text-muted">
+                    Dernière modification : {{ anamnesis.updatedAt ? anamnesis.updatedAt|date('d/m/Y à H:i') : '—' }}
+                </small>
+            </div>
+
+            {% if anamnesisDefinition %}
+                {# JSON-driven display: iterate sections then fields #}
+                {% set data = anamnesis.data %}
+                {% for section in anamnesisDefinition.sections %}
+                    {% set sectionHasData = false %}
+                    {% for field in section.fields %}
+                        {% if data[field.id] is defined and data[field.id] is not empty %}
+                            {% set sectionHasData = true %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if sectionHasData %}
+                        <h6 class="text-muted fw-semibold mb-2 mt-3" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">
+                            {{ section.title }}
+                        </h6>
+                        <div class="row">
+                            {% for field in section.fields %}
+                                {% if data[field.id] is defined and data[field.id] is not empty %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="text-muted small fw-bold text-uppercase" style="font-size:.7rem;letter-spacing:.05em;">
+                                            {{ field.label }}
+                                        </div>
+                                        <div class="mt-1">
+                                            {# Resolve select option label #}
+                                            {% if field.type == 'select' and field.options is defined %}
+                                                {% set rawVal = data[field.id] %}
+                                                {% set resolved = rawVal %}
+                                                {% for opt in field.options %}
+                                                    {% if opt.value == rawVal %}{% set resolved = opt.label %}{% endif %}
+                                                {% endfor %}
+                                                {{ resolved }}
+                                            {% else %}
+                                                {{ data[field.id] }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                {# Legacy: flat key/value with anamnesisLabels #}
+                <div class="row">
+                    {% for key, value in anamnesis.data %}
+                        {% if key != '_form_type' and value is not empty %}
+                            <div class="col-md-6 mb-3">
+                                <div class="text-muted small fw-bold text-uppercase" style="font-size: .7rem; letter-spacing: .05em;">
+                                    {{ anamnesisLabels[key] ?? key }}
+                                </div>
+                                <div class="mt-1">{{ value }}</div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="text-muted text-center py-3">Anamnèse non renseignée.</div>
+        {% endif %}
+    </div>
+</div>
+
+{# ══════════════════════════════════════════
+   Questionnaires — accordion
+   ══════════════════════════════════════════ #}
+<div class="card mt-4">
+    <div class="card-header bg-blue-lt">
+        <h3 class="card-title">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clipboard-list me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/>
+                <rect x="9" y="3" width="6" height="4" rx="2"/>
+                <line x1="9" y1="12" x2="9.01" y2="12"/>
+                <line x1="13" y1="12" x2="15" y2="12"/>
+                <line x1="9" y1="16" x2="9.01" y2="16"/>
+                <line x1="13" y1="16" x2="15" y2="16"/>
+            </svg>
+            Questionnaires ({{ responses|length }})
+        </h3>
+    </div>
+
+    <div class="card-body p-0">
+        {% if responses is empty %}
+            <div class="text-muted text-center py-4">Aucune passation enregistrée.</div>
+        {% else %}
+            <div class="accordion" id="accordion-responses">
+                {% for i, response in responses %}
+                    {% set q = response.questionnaire %}
+                    {% set isTeacher = q.questions.teacher_mode is defined and q.questions.teacher_mode %}
+                    {% set isParent = q.questions.parent_mode is defined and q.questions.parent_mode %}
+                    {% set isAdolescent = q.questions.adolescent_mode is defined and q.questions.adolescent_mode %}
+                    {% set isDiva = q.questions.diva_mode is defined and q.questions.diva_mode %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading-{{ i }}">
+                            <button class="accordion-button {{ i > 0 ? 'collapsed' : '' }}"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#collapse-{{ i }}"
+                                    aria-expanded="{{ i == 0 ? 'true' : 'false' }}"
+                                    aria-controls="collapse-{{ i }}">
+                                <div class="d-flex align-items-center gap-3 w-100 me-3">
+                                    <span class="fw-bold">{{ q.title }}</span>
+                                    {% if isTeacher %}
+                                        <span class="badge bg-teal-lt text-teal" style="font-size:.7rem;">Enseignant</span>
+                                    {% endif %}
+                                    {% if isParent %}
+                                        <span class="badge bg-blue-lt text-blue" style="font-size:.7rem;">Parents</span>
+                                    {% endif %}
+                                    {% if isAdolescent %}
+                                        <span class="badge" style="background:#e0f2f0;color:#2d7068;font-size:.7rem;">Auto-questionnaire</span>
+                                    {% endif %}
+                                    {% if isDiva %}
+                                        <span class="badge" style="background:#ebf4ff;color:#2c5282;font-size:.7rem;">DIVA 2.0</span>
+                                    {% endif %}
+                                    {% if response.isComplete %}
+                                        <span class="badge bg-success-lt text-success">Terminé</span>
+                                    {% else %}
+                                        <span class="badge bg-warning-lt text-warning">En cours</span>
+                                    {% endif %}
+                                    <span class="text-muted small ms-auto d-flex align-items-center gap-2">
+                                        {% set ageAtStart = response.patientAgeAtStart %}
+                                        {% if ageAtStart is not null %}
+                                            <span class="badge bg-blue-lt text-blue" title="Âge du patient lors de la passation">{{ ageAtStart }} ans</span>
+                                        {% endif %}
+                                        {{ response.startedAt ? response.startedAt|date('d/m/Y') : '' }}
+                                        {% if response.score is not null and not isTeacher and not isParent and not isAdolescent and not isDiva %}
+                                            — Score : <strong>{{ response.score }}</strong>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="collapse-{{ i }}"
+                             class="accordion-collapse collapse {{ i == 0 ? 'show' : '' }}"
+                             aria-labelledby="heading-{{ i }}"
+                             data-bs-parent="#accordion-responses">
+                            <div class="accordion-body p-0">
+
+                                {# ══════════════════════════════════════════════
+                                   TEACHER MODE — Brown ENS rich display
+                                   ══════════════════════════════════════════════ #}
+                                {% if isTeacher %}
+                                    {% set meta = response.answers %}
+                                    {% set durationLabels = {
+                                        'moins_1_mois': "< 1 mois",
+                                        '1_2_mois': '1-2 mois',
+                                        '3_5_mois': '3-5 mois',
+                                        '6_11_mois': '6-11 mois',
+                                        '12_mois_plus': '≥ 12 mois'
+                                    } %}
+
+                                    {# Meta info block #}
+                                    <div class="ens-meta-block px-4 py-3">
+                                        <div class="row g-2 small">
+                                            <div class="col-md-3">
+                                                <span class="text-muted">Élève :</span>
+                                                <strong>{{ (meta['_meta_eleve_prenom'] ?? '') ~ ' ' ~ (meta['_meta_eleve_nom'] ?? '—') }}</strong>
+                                                {% if meta['_meta_sexe'] is defined %}
+                                                    <span class="badge bg-secondary-lt ms-1">{{ meta['_meta_sexe'] }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-3">
+                                                <span class="text-muted">Classe :</span>
+                                                <strong>{{ meta['_meta_classe'] ?? '—' }}</strong>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <span class="text-muted">Évaluateur :</span>
+                                                <strong>{{ meta['_meta_evaluateur'] ?? '—' }}</strong>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <span class="text-muted">Connaissance :</span>
+                                                <strong>{{ durationLabels[meta['_meta_duree_connaissance'] ?? ''] ?? '—' }}</strong>
+                                            </div>
+                                            {% if meta['_meta_date_admin_annee'] is defined %}
+                                            <div class="col-md-3">
+                                                <span class="text-muted">Date passation :</span>
+                                                <strong>{{ meta['_meta_date_admin_jour'] ?? '' }}/{{ meta['_meta_date_admin_mois'] ?? '' }}/{{ meta['_meta_date_admin_annee'] ?? '' }}</strong>
+                                            </div>
+                                            {% endif %}
+                                            {% if meta['_meta_dn_annee'] is defined %}
+                                            <div class="col-md-3">
+                                                <span class="text-muted">Naissance :</span>
+                                                <strong>{{ meta['_meta_dn_jour'] ?? '' }}/{{ meta['_meta_dn_mois'] ?? '' }}/{{ meta['_meta_dn_annee'] ?? '' }}</strong>
+                                            </div>
+                                            {% endif %}
+                                            {% if meta['_meta_praticien'] is defined and meta['_meta_praticien'] is not empty %}
+                                            <div class="col-md-3">
+                                                <span class="text-muted">Praticien :</span>
+                                                <strong>{{ meta['_meta_praticien'] }}</strong>
+                                            </div>
+                                            {% endif %}
+                                            {% if meta['_meta_raisons'] is defined and meta['_meta_raisons'] is not empty %}
+                                            <div class="col-12">
+                                                <span class="text-muted">Raisons :</span> {{ meta['_meta_raisons'] }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    {# Scores table + bar chart #}
+                                    {% if response.isComplete and q.questions.sous_echelles is defined %}
+                                    {% set hasCorrection      = q.questions.omission_correction is defined and q.questions.omission_correction %}
+                                    {% set hasOmissionDefault = q.questions.omission_default_score is defined %}
+                                    {% set showOmissionCol    = hasCorrection or hasOmissionDefault %}
+                                    <div class="px-4 py-3 border-bottom">
+                                        <h5 class="mb-3 fw-bold" style="color:#4A9A9A;">Scores par cluster</h5>
+                                        <div class="row g-4">
+                                            {# Table #}
+                                            <div class="{{ showOmissionCol ? 'col-md-7' : 'col-md-5' }}">
+                                                <table class="table table-sm mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Cluster</th>
+                                                            <th class="text-center">Brut</th>
+                                                            {% if showOmissionCol %}
+                                                            <th class="text-center">Omissions</th>
+                                                            {% endif %}
+                                                            {% if hasCorrection %}
+                                                            <th class="text-center">Corrigé</th>
+                                                            {% endif %}
+                                                            <th class="text-center">Max</th>
+                                                            <th class="text-center">%</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% set totalBrut = 0 %}
+                                                        {% set totalMax  = 0 %}
+                                                        {% for se in q.questions.sous_echelles %}
+                                                            {% set seScore = meta['_score_' ~ se.id] ?? 0 %}
+                                                            {% set pct = se.score_max > 0 ? (seScore / se.score_max * 100)|round : 0 %}
+                                                            {% set totalBrut = totalBrut + seScore %}
+                                                            {% set totalMax  = totalMax  + se.score_max %}
+                                                            <tr>
+                                                                <td>{{ se.label }}</td>
+                                                                <td class="text-center fw-bold">{{ seScore }}</td>
+                                                                {% if showOmissionCol %}
+                                                                {% set omissions = meta['_score_' ~ se.id ~ '_omissions'] ?? '—' %}
+                                                                <td class="text-center">
+                                                                    {% if omissions is not same as('—') and omissions > 2 %}
+                                                                        <span class="badge bg-danger-lt text-danger">{{ omissions }}</span>
+                                                                    {% else %}
+                                                                        {{ omissions }}
+                                                                    {% endif %}
+                                                                </td>
+                                                                {% endif %}
+                                                                {% if hasCorrection %}
+                                                                {% set corrected = meta['_score_' ~ se.id ~ '_corrected'] %}
+                                                                <td class="text-center fw-bold">
+                                                                    {% if corrected is null %}
+                                                                        <span class="text-danger small">N/I</span>
+                                                                    {% elseif corrected is not defined or corrected is same as('') %}
+                                                                        <span class="text-muted">—</span>
+                                                                    {% else %}
+                                                                        {{ corrected }}
+                                                                    {% endif %}
+                                                                </td>
+                                                                {% endif %}
+                                                                <td class="text-center text-muted">{{ se.score_max }}</td>
+                                                                <td class="text-center">
+                                                                    <span class="badge small
+                                                                        {% if pct <= 33 %}ens-badge-low
+                                                                        {% elseif pct <= 66 %}ens-badge-mid
+                                                                        {% else %}ens-badge-high{% endif %}">
+                                                                        {{ pct }}%
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                        {% set totalPct = totalMax > 0 ? (totalBrut / totalMax * 100)|round : 0 %}
+                                                        <tr class="table-light fw-bold">
+                                                            <td>TOTAL</td>
+                                                            <td class="text-center">{{ totalBrut }}</td>
+                                                            {% if showOmissionCol %}
+                                                            <td class="text-center text-muted small">—</td>
+                                                            {% endif %}
+                                                            {% if hasCorrection %}
+                                                            <td class="text-center text-muted">—</td>
+                                                            {% endif %}
+                                                            <td class="text-center text-muted">{{ totalMax }}</td>
+                                                            <td class="text-center">
+                                                                <span class="badge small
+                                                                    {% if totalPct <= 33 %}ens-badge-low
+                                                                    {% elseif totalPct <= 66 %}ens-badge-mid
+                                                                    {% else %}ens-badge-high{% endif %}">
+                                                                    {{ totalPct }}%
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                                {% if hasOmissionDefault %}
+                                                <p class="text-muted small mt-2 mb-0">Les omissions comptent comme {{ q.questions.omission_default_score }} point chacune (score brut déjà intégré).</p>
+                                                {% endif %}
+                                                {% if hasCorrection %}
+                                                <p class="text-muted small mt-2 mb-0">N/I = Non interprétable (omissions &gt; 2)</p>
+                                                {% endif %}
+                                            </div>
+
+                                            {# Bar chart #}
+                                            <div class="{{ showOmissionCol ? 'col-md-5' : 'col-md-7' }}">
+                                                <div class="d-flex flex-column gap-3">
+                                                    {% for se in q.questions.sous_echelles %}
+                                                        {% set seScore = meta['_score_' ~ se.id] ?? 0 %}
+                                                        {% set pct = se.score_max > 0 ? (seScore / se.score_max * 100)|round : 0 %}
+                                                        <div>
+                                                            <div class="d-flex justify-content-between small mb-1">
+                                                                <span class="fw-semibold">{{ se.label }}</span>
+                                                                <span class="text-muted">{{ seScore }} / {{ se.score_max }}</span>
+                                                            </div>
+                                                            <div class="ens-cluster-bar">
+                                                                <div class="ens-cluster-bar-fill
+                                                                    {% if pct <= 33 %}ens-score-low
+                                                                    {% elseif pct <= 66 %}ens-score-mid
+                                                                    {% else %}ens-score-high{% endif %}"
+                                                                    style="width:{{ pct }}%;"
+                                                                    role="progressbar"
+                                                                    aria-valuenow="{{ pct }}"
+                                                                    aria-valuemin="0"
+                                                                    aria-valuemax="100"
+                                                                    aria-label="{{ se.label }} : {{ pct }}%">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                                <div class="mt-3 d-flex flex-wrap gap-3 small text-muted">
+                                                    <span class="d-flex align-items-center gap-1">
+                                                        <span style="display:inline-block;width:12px;height:12px;background:#28a745;border-radius:2px;"></span>
+                                                        0-33% peu problématique
+                                                    </span>
+                                                    <span class="d-flex align-items-center gap-1">
+                                                        <span style="display:inline-block;width:12px;height:12px;background:#ffc107;border-radius:2px;"></span>
+                                                        34-66% modéré
+                                                    </span>
+                                                    <span class="d-flex align-items-center gap-1">
+                                                        <span style="display:inline-block;width:12px;height:12px;background:#dc3545;border-radius:2px;"></span>
+                                                        67-100% très problématique
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {# Detail accordion — item by item #}
+                                    <div class="px-4 py-3">
+                                        <div class="accordion accordion-flush" id="detail-acc-{{ i }}">
+                                            <div class="accordion-item border">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed py-2 small fw-semibold" type="button"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#detail-body-{{ i }}"
+                                                            aria-expanded="false">
+                                                        Voir le détail des réponses ({{ q.questions.items|length }} items)
+                                                    </button>
+                                                </h2>
+                                                <div id="detail-body-{{ i }}" class="accordion-collapse collapse">
+                                                    <div class="accordion-body p-0">
+                                                        {# Build cluster labels/colors #}
+                                                        {% set palette = ['bg-warning-lt text-warning','bg-success-lt text-success','bg-blue-lt text-blue','bg-azure-lt text-azure','bg-teal-lt text-teal','bg-pink-lt text-pink','bg-orange-lt text-orange','bg-indigo-lt text-indigo'] %}
+                                                        {% set clusterLabels = {} %}
+                                                        {% set clusterColors = {} %}
+                                                        {% for se in q.questions.sous_echelles %}
+                                                            {% set clusterLabels = clusterLabels|merge({(se.id): se.label}) %}
+                                                            {% set clusterColors = clusterColors|merge({(se.id): palette[loop.index0 % palette|length]}) %}
+                                                        {% endfor %}
+                                                        <table class="table table-sm table-vcenter mb-0">
+                                                            <thead class="table-light">
+                                                                <tr>
+                                                                    <th style="width:3rem;">#</th>
+                                                                    <th style="width:8rem;">Cluster</th>
+                                                                    <th>Item</th>
+                                                                    <th style="width:14rem;">Réponse</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {% set itemList = q.questions.items|sort((a, b) => a.ordre_affichage <=> b.ordre_affichage) %}
+                                                                {% for item in itemList %}
+                                                                    {% set answer = response.answers[item.id] ?? '—' %}
+                                                                    {% set selectedLabel = '—' %}
+                                                                    {% if answer != '—' %}
+                                                                        {% for opt in item.options %}
+                                                                            {% if opt.valeur ~ '' == answer ~ '' %}
+                                                                                {% set selectedLabel = opt.code ~ ' — ' ~ opt.label %}
+                                                                            {% endif %}
+                                                                        {% endfor %}
+                                                                    {% endif %}
+                                                                    {% set badgeClass = clusterColors[item.sous_echelle] ?? 'bg-secondary-lt text-secondary' %}
+                                                                    <tr>
+                                                                        <td class="text-muted">{{ item.ordre_affichage }}</td>
+                                                                        <td>
+                                                                            <span class="badge {{ badgeClass }}" style="font-size:.6rem;">
+                                                                                {{ (clusterLabels[item.sous_echelle] ?? item.sous_echelle)|upper }}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td class="small">{{ item.texte }}</td>
+                                                                        <td>
+                                                                            {% if answer != '—' %}
+                                                                                <span class="badge small
+                                                                                    {% if answer == '0' %}bg-success-lt text-success
+                                                                                    {% elseif answer == '1' %}bg-warning-lt text-warning
+                                                                                    {% elseif answer == '2' %}bg-orange-lt text-orange
+                                                                                    {% else %}bg-danger-lt text-danger{% endif %}">
+                                                                                    {{ selectedLabel }}
+                                                                                </span>
+                                                                            {% else %}
+                                                                                <span class="text-muted">—</span>
+                                                                            {% endif %}
+                                                                        </td>
+                                                                    </tr>
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="px-4 py-2 text-muted small d-flex gap-4 border-top">
+                                        <span>Commencé : {{ response.startedAt ? response.startedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                        <span>Terminé : {{ response.completedAt ? response.completedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                    </div>
+
+                                {# ══════════════════════════════════════════════
+                                   PARENT MODE — Brown ENF Parents rich display
+                                   ══════════════════════════════════════════════ #}
+                                {% elseif isParent %}
+                                    {% set meta = response.answers %}
+                                    {% set lienLabels = {'mere': 'Mère', 'pere': 'Père', 'tuteur': 'Tuteur/Tutrice', 'autre': 'Autre'} %}
+
+                                    {# Meta info block #}
+                                    <div class="ens-meta-block px-4 py-3" style="background:#f0f6ff;">
+                                        <div class="row g-2 small">
+                                            {% if meta['_meta_evaluateur'] is defined and meta['_meta_evaluateur'] is not empty %}
+                                            {# ── Champs info_fields (nouveau format JSON) ── #}
+                                            <div class="col-md-4">
+                                                <span class="text-muted">Évaluateur :</span>
+                                                <strong>{{ meta['_meta_evaluateur'] }}</strong>
+                                            </div>
+                                            {% if meta['_meta_date_evaluation'] is defined and meta['_meta_date_evaluation'] is not empty %}
+                                            <div class="col-md-4">
+                                                <span class="text-muted">Date évaluation :</span>
+                                                <strong>{{ meta['_meta_date_evaluation']|date('d/m/Y') }}</strong>
+                                            </div>
+                                            {% endif %}
+                                            {% if meta['_meta_lien_parente'] is defined and meta['_meta_lien_parente'] is not empty %}
+                                            <div class="col-md-4">
+                                                <span class="text-muted">Lien parenté :</span>
+                                                <strong>{{ meta['_meta_lien_parente'] }}</strong>
+                                            </div>
+                                            {% endif %}
+                                            {% else %}
+                                            {# ── Champs legacy (parent_mode sans info_fields) ── #}
+                                            <div class="col-md-4">
+                                                <span class="text-muted">Enfant :</span>
+                                                <strong>{{ (meta['_meta_enfant_prenom'] ?? '') ~ ' ' ~ (meta['_meta_enfant_nom'] ?? '—') }}</strong>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <span class="text-muted">Classe :</span>
+                                                <strong>{{ meta['_meta_classe'] ?? '—' }}</strong>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <span class="text-muted">Évaluateur :</span>
+                                                <strong>{{ (meta['_meta_evaluateur_prenom'] ?? '') ~ ' ' ~ (meta['_meta_evaluateur_nom'] ?? '—') }}</strong>
+                                                {% set lien = meta['_meta_lien'] ?? '' %}
+                                                {% if lien is not empty %}
+                                                    <span class="badge bg-blue-lt text-blue ms-1">{{ lienLabels[lien] ?? lien }}</span>
+                                                {% endif %}
+                                                {% if lien == 'autre' and meta['_meta_lien_autre'] is defined and meta['_meta_lien_autre'] is not empty %}
+                                                    <span class="text-muted"> ({{ meta['_meta_lien_autre'] }})</span>
+                                                {% endif %}
+                                            </div>
+                                            {% if meta['_meta_praticien'] is defined and meta['_meta_praticien'] is not empty %}
+                                            <div class="col-md-4">
+                                                <span class="text-muted">Praticien :</span>
+                                                <strong>{{ meta['_meta_praticien'] }}</strong>
+                                            </div>
+                                            {% endif %}
+                                            {% if meta['_meta_date_admin'] is defined and meta['_meta_date_admin'] is not empty %}
+                                            <div class="col-md-4">
+                                                <span class="text-muted">Date passation :</span>
+                                                <strong>{{ meta['_meta_date_admin']|date('d/m/Y') }}</strong>
+                                            </div>
+                                            {% endif %}
+                                            {% if meta['_meta_date_naissance'] is defined and meta['_meta_date_naissance'] is not empty %}
+                                            <div class="col-md-4">
+                                                <span class="text-muted">Naissance enfant :</span>
+                                                <strong>{{ meta['_meta_date_naissance']|date('d/m/Y') }}</strong>
+                                            </div>
+                                            {% endif %}
+                                            {% if meta['_meta_raisons'] is defined and meta['_meta_raisons'] is not empty %}
+                                            <div class="col-12">
+                                                <span class="text-muted">Raisons :</span> {{ meta['_meta_raisons'] }}
+                                            </div>
+                                            {% endif %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    {# Scores table + bar chart #}
+                                    {% if response.isComplete and q.questions.sous_echelles is defined %}
+                                    <div class="px-4 py-3 border-bottom">
+                                        <h5 class="mb-3 fw-bold" style="color:#1a6fa8;">Scores par cluster</h5>
+                                        <div class="row g-4">
+                                            {# Table #}
+                                            <div class="col-md-5">
+                                                <table class="table table-sm mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Cluster</th>
+                                                            <th class="text-center">Brut</th>
+                                                            <th class="text-center">Max</th>
+                                                            <th class="text-center">%</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% set totalBrut = 0 %}
+                                                        {% set totalMax  = 0 %}
+                                                        {% for se in q.questions.sous_echelles %}
+                                                            {% set seScore = meta['_score_' ~ se.id] ?? 0 %}
+                                                            {% set pct = se.score_max > 0 ? (seScore / se.score_max * 100)|round : 0 %}
+                                                            {% set totalBrut = totalBrut + seScore %}
+                                                            {% set totalMax  = totalMax  + se.score_max %}
+                                                            <tr>
+                                                                <td>{{ se.label }}</td>
+                                                                <td class="text-center fw-bold">{{ seScore }}</td>
+                                                                <td class="text-center text-muted">{{ se.score_max }}</td>
+                                                                <td class="text-center">
+                                                                    <span class="badge small
+                                                                        {% if pct <= 33 %}ens-badge-low
+                                                                        {% elseif pct <= 66 %}ens-badge-mid
+                                                                        {% else %}ens-badge-high{% endif %}">
+                                                                        {{ pct }}%
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                        {% set totalPct = totalMax > 0 ? (totalBrut / totalMax * 100)|round : 0 %}
+                                                        <tr class="table-light fw-bold">
+                                                            <td>TOTAL</td>
+                                                            <td class="text-center">{{ totalBrut }}</td>
+                                                            <td class="text-center text-muted">{{ totalMax }}</td>
+                                                            <td class="text-center">
+                                                                <span class="badge small
+                                                                    {% if totalPct <= 33 %}ens-badge-low
+                                                                    {% elseif totalPct <= 66 %}ens-badge-mid
+                                                                    {% else %}ens-badge-high{% endif %}">
+                                                                    {{ totalPct }}%
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {# Bar chart #}
+                                            <div class="col-md-7">
+                                                <div class="d-flex flex-column gap-3">
+                                                    {% for se in q.questions.sous_echelles %}
+                                                        {% set seScore = meta['_score_' ~ se.id] ?? 0 %}
+                                                        {% set pct = se.score_max > 0 ? (seScore / se.score_max * 100)|round : 0 %}
+                                                        <div>
+                                                            <div class="d-flex justify-content-between small mb-1">
+                                                                <span class="fw-semibold">{{ se.label }}</span>
+                                                                <span class="text-muted">{{ seScore }} / {{ se.score_max }}</span>
+                                                            </div>
+                                                            <div class="ens-cluster-bar">
+                                                                <div class="ens-cluster-bar-fill
+                                                                    {% if pct <= 33 %}ens-score-low
+                                                                    {% elseif pct <= 66 %}ens-score-mid
+                                                                    {% else %}ens-score-high{% endif %}"
+                                                                    style="width:{{ pct }}%;"
+                                                                    role="progressbar"
+                                                                    aria-valuenow="{{ pct }}"
+                                                                    aria-valuemin="0" aria-valuemax="100"
+                                                                    aria-label="{{ se.label }} : {{ pct }}%">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                                <div class="mt-3 d-flex flex-wrap gap-3 small text-muted">
+                                                    <span class="d-flex align-items-center gap-1">
+                                                        <span style="display:inline-block;width:12px;height:12px;background:#28a745;border-radius:2px;"></span>
+                                                        0-33% peu problématique
+                                                    </span>
+                                                    <span class="d-flex align-items-center gap-1">
+                                                        <span style="display:inline-block;width:12px;height:12px;background:#ffc107;border-radius:2px;"></span>
+                                                        34-66% modéré
+                                                    </span>
+                                                    <span class="d-flex align-items-center gap-1">
+                                                        <span style="display:inline-block;width:12px;height:12px;background:#dc3545;border-radius:2px;"></span>
+                                                        67-100% très problématique
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {# Detail accordion — item by item #}
+                                    <div class="px-4 py-3">
+                                        <div class="accordion accordion-flush" id="detail-acc-{{ i }}">
+                                            <div class="accordion-item border">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed py-2 small fw-semibold" type="button"
+                                                            data-bs-toggle="collapse"
+                                                            data-bs-target="#detail-body-{{ i }}"
+                                                            aria-expanded="false">
+                                                        Voir le détail des réponses (58 items)
+                                                    </button>
+                                                </h2>
+                                                <div id="detail-body-{{ i }}" class="accordion-collapse collapse">
+                                                    <div class="accordion-body p-0">
+                                                        {% set palette = ['bg-warning-lt text-warning','bg-success-lt text-success','bg-blue-lt text-blue','bg-azure-lt text-azure','bg-teal-lt text-teal','bg-pink-lt text-pink','bg-orange-lt text-orange','bg-indigo-lt text-indigo'] %}
+                                                        {% set clusterLabels = {} %}
+                                                        {% set clusterColors = {} %}
+                                                        {% for se in q.questions.sous_echelles %}
+                                                            {% set clusterLabels = clusterLabels|merge({(se.id): se.label}) %}
+                                                            {% set clusterColors = clusterColors|merge({(se.id): palette[loop.index0 % palette|length]}) %}
+                                                        {% endfor %}
+                                                        <table class="table table-sm table-vcenter mb-0">
+                                                            <thead class="table-light">
+                                                                <tr>
+                                                                    <th style="width:3rem;">#</th>
+                                                                    <th style="width:8rem;">Cluster</th>
+                                                                    <th>Item</th>
+                                                                    <th style="width:14rem;">Réponse</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {% set itemList = q.questions.items|sort((a, b) => a.ordre_affichage <=> b.ordre_affichage) %}
+                                                                {% for item in itemList %}
+                                                                    {% set answer = response.answers[item.id] ?? '—' %}
+                                                                    {% set selectedLabel = '—' %}
+                                                                    {% if answer != '—' %}
+                                                                        {% for opt in item.options %}
+                                                                            {% if opt.valeur ~ '' == answer ~ '' %}
+                                                                                {% set selectedLabel = opt.code ~ ' — ' ~ opt.label %}
+                                                                            {% endif %}
+                                                                        {% endfor %}
+                                                                    {% endif %}
+                                                                    {% set badgeClass = clusterColors[item.sous_echelle] ?? 'bg-secondary-lt text-secondary' %}
+                                                                    <tr>
+                                                                        <td class="text-muted">{{ item.ordre_affichage }}</td>
+                                                                        <td>
+                                                                            <span class="badge {{ badgeClass }}" style="font-size:.6rem;">
+                                                                                {{ (clusterLabels[item.sous_echelle] ?? item.sous_echelle)|upper }}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td class="small">{{ item.texte }}</td>
+                                                                        <td>
+                                                                            {% if answer != '—' %}
+                                                                                <span class="badge small
+                                                                                    {% if answer == '0' %}bg-success-lt text-success
+                                                                                    {% elseif answer == '1' %}bg-warning-lt text-warning
+                                                                                    {% elseif answer == '2' %}bg-orange-lt text-orange
+                                                                                    {% else %}bg-danger-lt text-danger{% endif %}">
+                                                                                    {{ selectedLabel }}
+                                                                                </span>
+                                                                            {% else %}
+                                                                                <span class="text-muted">—</span>
+                                                                            {% endif %}
+                                                                        </td>
+                                                                    </tr>
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="px-4 py-2 text-muted small d-flex gap-4 border-top">
+                                        <span>Commencé : {{ response.startedAt ? response.startedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                        <span>Terminé : {{ response.completedAt ? response.completedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                    </div>
+
+                                {# ══════════════════════════════════════════════
+                                   ADOLESCENT MODE — Brown ADO auto-questionnaire
+                                   ══════════════════════════════════════════════ #}
+                                {% elseif isAdolescent %}
+                                    {% set meta = response.answers %}
+
+                                    {# Scores table + bar chart #}
+                                    {% if response.isComplete and q.questions.sous_echelles is defined %}
+                                    {% set hasOmissionDefault = q.questions.omission_default_score is defined %}
+                                    {% set showOmissionCol    = hasOmissionDefault %}
+                                    <div class="px-4 py-3 border-bottom">
+                                        <h5 class="mb-3 fw-bold" style="color:#4a9b8f;">Scores par cluster</h5>
+                                        <div class="row g-4">
+                                            <div class="{{ showOmissionCol ? 'col-md-7' : 'col-md-5' }}">
+                                                <table class="table table-sm mb-0">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Cluster</th>
+                                                            <th class="text-center">Brut</th>
+                                                            {% if showOmissionCol %}<th class="text-center">Omissions</th>{% endif %}
+                                                            <th class="text-center">Max</th>
+                                                            <th class="text-center">%</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% set totalBrut = 0 %}
+                                                        {% set totalMax  = 0 %}
+                                                        {% for se in q.questions.sous_echelles %}
+                                                            {% set seScore = meta['_score_' ~ se.id] ?? 0 %}
+                                                            {% set pct = se.score_max > 0 ? (seScore / se.score_max * 100)|round : 0 %}
+                                                            {% set totalBrut = totalBrut + seScore %}
+                                                            {% set totalMax  = totalMax  + se.score_max %}
+                                                            <tr>
+                                                                <td>{{ se.label }}</td>
+                                                                <td class="text-center fw-bold">{{ seScore }}</td>
+                                                                {% if showOmissionCol %}
+                                                                {% set omissions = meta['_score_' ~ se.id ~ '_omissions'] ?? '—' %}
+                                                                <td class="text-center">
+                                                                    {% if omissions is not same as('—') and omissions > 2 %}
+                                                                        <span class="badge bg-danger-lt text-danger">{{ omissions }}</span>
+                                                                    {% else %}{{ omissions }}{% endif %}
+                                                                </td>
+                                                                {% endif %}
+                                                                <td class="text-center text-muted">{{ se.score_max }}</td>
+                                                                <td class="text-center">
+                                                                    <span class="badge small
+                                                                        {% if pct <= 33 %}ens-badge-low
+                                                                        {% elseif pct <= 66 %}ens-badge-mid
+                                                                        {% else %}ens-badge-high{% endif %}">
+                                                                        {{ pct }}%
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                        {% set totalPct = totalMax > 0 ? (totalBrut / totalMax * 100)|round : 0 %}
+                                                        <tr class="table-light fw-bold">
+                                                            <td>TOTAL</td>
+                                                            <td class="text-center">{{ totalBrut }}</td>
+                                                            {% if showOmissionCol %}<td class="text-center text-muted">—</td>{% endif %}
+                                                            <td class="text-center text-muted">{{ totalMax }}</td>
+                                                            <td class="text-center">
+                                                                <span class="badge small
+                                                                    {% if totalPct <= 33 %}ens-badge-low
+                                                                    {% elseif totalPct <= 66 %}ens-badge-mid
+                                                                    {% else %}ens-badge-high{% endif %}">
+                                                                    {{ totalPct }}%
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {# Bar chart #}
+                                            <div class="{{ showOmissionCol ? 'col-md-5' : 'col-md-7' }}">
+                                                <div class="d-flex flex-column gap-3">
+                                                    {% for se in q.questions.sous_echelles %}
+                                                        {% set seScore = meta['_score_' ~ se.id] ?? 0 %}
+                                                        {% set pct = se.score_max > 0 ? (seScore / se.score_max * 100)|round : 0 %}
+                                                        <div>
+                                                            <div class="d-flex justify-content-between small mb-1">
+                                                                <span class="fw-semibold">{{ se.label }}</span>
+                                                                <span class="text-muted">{{ seScore }} / {{ se.score_max }}</span>
+                                                            </div>
+                                                            <div class="ens-cluster-bar">
+                                                                <div class="ens-cluster-bar-fill
+                                                                    {% if pct <= 33 %}ens-bar-low
+                                                                    {% elseif pct <= 66 %}ens-bar-mid
+                                                                    {% else %}ens-bar-high{% endif %}"
+                                                                    style="width:{{ pct }}%"></div>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {# Item detail accordion #}
+                                    {% set clusterColors = {
+                                        'activation':'bg-teal-lt text-teal',
+                                        'focus':'bg-green-lt text-green',
+                                        'effort':'bg-purple-lt text-purple',
+                                        'emotion':'bg-orange-lt text-orange',
+                                        'memoire':'bg-blue-lt text-blue',
+                                        'action':'bg-red-lt text-red'
+                                    } %}
+                                    {% set clusterLabels = {} %}
+                                    {% for se in q.questions.sous_echelles %}
+                                        {% set clusterLabels = clusterLabels|merge({(se.id): se.label}) %}
+                                    {% endfor %}
+                                    <div class="px-4 py-3">
+                                        <div class="accordion accordion-flush" id="ado-items-accordion">
+                                            <div class="accordion-item border-0">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed ps-0 fw-semibold text-muted small" type="button"
+                                                            data-bs-toggle="collapse" data-bs-target="#ado-items-detail">
+                                                        Détail des réponses ({{ q.questions.items|length }} items)
+                                                    </button>
+                                                </h2>
+                                                <div id="ado-items-detail" class="accordion-collapse collapse">
+                                                    <table class="table table-sm table-hover mb-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th style="width:2.5rem;">#</th>
+                                                                <th style="width:6rem;">Cluster</th>
+                                                                <th>Item</th>
+                                                                <th style="width:14rem;">Réponse</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% set itemList = q.questions.items|sort((a,b) => a.ordre_affichage <=> b.ordre_affichage) %}
+                                                            {% for item in itemList %}
+                                                                {% set answer = response.answers[item.id] ?? '—' %}
+                                                                {% set selectedLabel = '—' %}
+                                                                {% if answer != '—' %}
+                                                                    {% for opt in item.options %}
+                                                                        {% if opt.valeur ~ '' == answer ~ '' %}
+                                                                            {% set selectedLabel = opt.code ~ ' — ' ~ opt.label %}
+                                                                        {% endif %}
+                                                                    {% endfor %}
+                                                                {% endif %}
+                                                                {% set badgeClass = clusterColors[item.sous_echelle] ?? 'bg-secondary-lt text-secondary' %}
+                                                                <tr>
+                                                                    <td class="text-muted">{{ item.ordre_affichage }}</td>
+                                                                    <td>
+                                                                        <span class="badge {{ badgeClass }}" style="font-size:.6rem;">
+                                                                            {{ (clusterLabels[item.sous_echelle] ?? item.sous_echelle)|upper }}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td class="small">{{ item.texte }}</td>
+                                                                    <td>
+                                                                        {% if answer != '—' %}
+                                                                            <span class="badge small
+                                                                                {% if answer == '0' %}bg-success-lt text-success
+                                                                                {% elseif answer == '1' %}bg-warning-lt text-warning
+                                                                                {% elseif answer == '2' %}bg-orange-lt text-orange
+                                                                                {% else %}bg-danger-lt text-danger{% endif %}">
+                                                                                {{ selectedLabel }}
+                                                                            </span>
+                                                                        {% else %}
+                                                                            <span class="text-muted">—</span>
+                                                                        {% endif %}
+                                                                    </td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}{# end isComplete #}
+
+                                    <div class="px-4 py-2 text-muted small d-flex gap-4 border-top">
+                                        <span>Commencé : {{ response.startedAt ? response.startedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                        <span>Terminé : {{ response.completedAt ? response.completedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                    </div>
+
+                                {# ══════════════════════════════════════════════
+                                   DIVA 2.0 mode
+                                   ══════════════════════════════════════════════ #}
+                                {% elseif isDiva %}
+                                    {% set dAns = response.answers ?? {} %}
+                                    {% set divaSections = q.questions.sections %}
+
+                                    {% if response.isComplete %}
+                                    {# ── Score summary ── #}
+                                    <div class="px-4 py-3 border-bottom">
+                                        <h5 class="fw-bold mb-3" style="color:#2c5282;">Scores DIVA 2.0</h5>
+                                        <div class="row g-3">
+                                            {% for section in divaSections %}
+                                            {% if section.has_periods %}
+                                            {% set adultScore = dAns['_score_' ~ section.id ~ '_adult'] ?? '—' %}
+                                            {% set childScore = dAns['_score_' ~ section.id ~ '_child'] ?? '—' %}
+                                            <div class="col-md-6">
+                                                <div class="diva-score-card h-100">
+                                                    <div class="fw-bold mb-2" style="color:#2c5282;">{{ section.short_label }}</div>
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <span class="text-muted small">Adulte (6 derniers mois)</span>
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <span class="fw-bold">{{ adultScore }} / {{ section.items|length }}</span>
+                                                            {% if adultScore is not same as('—') %}
+                                                            <span class="badge small {{ adultScore >= 6 ? 'diva-threshold-warn' : 'diva-threshold-ok' }}">
+                                                                {{ adultScore >= 6 ? '⚠ Seuil atteint (≥6)' : '✓ Sous le seuil' }}
+                                                            </span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    {% if adultScore is not same as('—') %}
+                                                    <div class="ens-cluster-bar mb-2">
+                                                        <div class="ens-cluster-bar-fill {{ adultScore >= 6 ? 'ens-score-high' : 'ens-score-low' }}"
+                                                             style="width:{{ (adultScore / section.items|length * 100)|round }}%"></div>
+                                                    </div>
+                                                    {% endif %}
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <span class="text-muted small">Enfance (5–12 ans)</span>
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <span class="fw-bold">{{ childScore }} / {{ section.items|length }}</span>
+                                                            {% if childScore is not same as('—') %}
+                                                            <span class="badge small {{ childScore >= 6 ? 'diva-threshold-warn' : 'diva-threshold-ok' }}">
+                                                                {{ childScore >= 6 ? '⚠ Seuil atteint (≥6)' : '✓ Sous le seuil' }}
+                                                            </span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    {% if childScore is not same as('—') %}
+                                                    <div class="ens-cluster-bar mt-1">
+                                                        <div class="ens-cluster-bar-fill {{ childScore >= 6 ? 'ens-score-high' : 'ens-score-low' }}"
+                                                             style="width:{{ (childScore / section.items|length * 100)|round }}%"></div>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% else %}
+                                            {# Fonctionnement section #}
+                                            {% set funcScore = dAns['_score_' ~ section.id] ?? '—' %}
+                                            <div class="col-md-12">
+                                                <div class="diva-score-card">
+                                                    <div class="fw-bold mb-2" style="color:#2c5282;">{{ section.short_label }}</div>
+                                                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                                                        {% for item in section.items %}
+                                                        {% set val = dAns[item.id] ?? null %}
+                                                        <span class="badge {{ val == 'oui' ? 'bg-success-lt text-success' : (val == 'non' ? 'bg-secondary-lt text-secondary' : 'bg-light text-muted') }}">
+                                                            {{ item.id }} : {{ val ?? '—' }}
+                                                        </span>
+                                                        {% endfor %}
+                                                        {% if funcScore is not same as('—') %}
+                                                        <span class="ms-auto fw-bold">{{ funcScore }} / {{ section.items|length }} domaine(s) impacté(s)</span>
+                                                        <span class="badge small {{ funcScore >= 2 ? 'diva-threshold-warn' : 'diva-threshold-ok' }}">
+                                                            {{ funcScore >= 2 ? '⚠ Retentissement ≥2 domaines' : '✓ < 2 domaines' }}
+                                                        </span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </div>
+
+                                        {# DSM-IV proposal #}
+                                        {% set inattAdult  = dAns['_score_inattention_adult']     ?? null %}
+                                        {% set inattChild  = dAns['_score_inattention_child']     ?? null %}
+                                        {% set hyperAdult  = dAns['_score_hyperactivite_adult']   ?? null %}
+                                        {% set hyperChild  = dAns['_score_hyperactivite_child']   ?? null %}
+                                        {% set funcDomains = dAns['_score_fonctionnement']        ?? null %}
+                                        {% if inattAdult is not null and hyperAdult is not null %}
+                                        <div class="mt-4 p-3 border rounded" style="background:#f7faff;border-color:#bee3f8!important;">
+                                            <div class="fw-bold mb-2" style="color:#2c5282;">
+                                                Proposition diagnostique DSM-IV
+                                                <span class="text-muted fw-normal small">(à confirmer par le clinicien)</span>
+                                            </div>
+                                            <div class="row g-2 small">
+                                                <div class="col-sm-6">
+                                                    <div class="text-muted">Inattention adulte ≥6 :</div>
+                                                    <strong class="{{ inattAdult >= 6 ? 'text-danger' : 'text-success' }}">{{ inattAdult >= 6 ? 'OUI (' ~ inattAdult ~ '/9)' : 'NON (' ~ inattAdult ~ '/9)' }}</strong>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="text-muted">Hyperactivité adulte ≥6 :</div>
+                                                    <strong class="{{ hyperAdult >= 6 ? 'text-danger' : 'text-success' }}">{{ hyperAdult >= 6 ? 'OUI (' ~ hyperAdult ~ '/9)' : 'NON (' ~ hyperAdult ~ '/9)' }}</strong>
+                                                </div>
+                                                {% if inattChild is not null %}
+                                                <div class="col-sm-6">
+                                                    <div class="text-muted">Inattention enfance ≥6 :</div>
+                                                    <strong class="{{ inattChild >= 6 ? 'text-danger' : 'text-success' }}">{{ inattChild >= 6 ? 'OUI (' ~ inattChild ~ '/9)' : 'NON (' ~ inattChild ~ '/9)' }}</strong>
+                                                </div>
+                                                {% endif %}
+                                                {% if hyperChild is not null %}
+                                                <div class="col-sm-6">
+                                                    <div class="text-muted">Hyperactivité enfance ≥6 :</div>
+                                                    <strong class="{{ hyperChild >= 6 ? 'text-danger' : 'text-success' }}">{{ hyperChild >= 6 ? 'OUI (' ~ hyperChild ~ '/9)' : 'NON (' ~ hyperChild ~ '/9)' }}</strong>
+                                                </div>
+                                                {% endif %}
+                                                {% if funcDomains is not null %}
+                                                <div class="col-sm-6">
+                                                    <div class="text-muted">Retentissement ≥2 domaines :</div>
+                                                    <strong class="{{ funcDomains >= 2 ? 'text-danger' : 'text-success' }}">{{ funcDomains >= 2 ? 'OUI (' ~ funcDomains ~ '/5)' : 'NON (' ~ funcDomains ~ '/5)' }}</strong>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            {% set typeLabel = '' %}
+                                            {% if inattAdult >= 6 and hyperAdult >= 6 %}
+                                                {% set typeLabel = 'Type Combiné (314.01)' %}
+                                            {% elseif inattAdult >= 6 %}
+                                                {% set typeLabel = 'Inattention prédominante (314.00)' %}
+                                            {% elseif hyperAdult >= 6 %}
+                                                {% set typeLabel = 'Hyperactivité/Impulsivité prédominante (314.01)' %}
+                                            {% else %}
+                                                {% set typeLabel = 'Critères adultes non atteints' %}
+                                            {% endif %}
+                                            <div class="mt-2 pt-2 border-top fw-bold" style="color:#2c5282;">
+                                                Type proposé : {{ typeLabel }}
+                                                {% if inattChild >= 6 or hyperChild >= 6 %}
+                                                <span class="text-muted fw-normal small ms-2">— Critères enfance présents → persistance vie entière possible</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}{# end isComplete #}
+
+                                    {# ── Item-by-item detail ── #}
+                                    <div class="px-4 py-3">
+                                        <div class="accordion accordion-flush" id="diva-detail-{{ i }}">
+                                        {% for section in divaSections %}
+                                        <div class="accordion-item border rounded mb-2">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed fw-semibold" type="button"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#diva-sec-{{ i }}-{{ section.id }}"
+                                                        style="color:#2c5282;">
+                                                    {{ section.label }}
+                                                </button>
+                                            </h2>
+                                            <div id="diva-sec-{{ i }}-{{ section.id }}" class="accordion-collapse collapse">
+                                                <div class="accordion-body p-0">
+                                                    <table class="table table-sm table-vcenter mb-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th style="width:3.5rem;">Code</th>
+                                                                <th>Critère</th>
+                                                                {% if section.has_periods %}
+                                                                <th class="text-center" style="width:5.5rem;">Adulte</th>
+                                                                <th class="text-center" style="width:5.5rem;">Enfance</th>
+                                                                {% else %}
+                                                                <th class="text-center" style="width:5.5rem;">Réponse</th>
+                                                                {% endif %}
+                                                                <th>Commentaires</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for item in section.items %}
+                                                            {% if section.has_periods %}
+                                                                {% set aVal = dAns[item.id ~ '_adult'] ?? null %}
+                                                                {% set cVal = dAns[item.id ~ '_child'] ?? null %}
+                                                                {% set aComment = dAns[item.id ~ '_adult_comment'] ?? '' %}
+                                                                {% set cComment = dAns[item.id ~ '_child_comment'] ?? '' %}
+                                                                <tr>
+                                                                    <td class="fw-bold text-muted">{{ item.id }}</td>
+                                                                    <td class="small">{{ item.text }}</td>
+                                                                    <td class="text-center">
+                                                                        {% if aVal == 'oui' %}<span class="diva-yn-oui">OUI</span>
+                                                                        {% elseif aVal == 'non' %}<span class="diva-yn-non">NON</span>
+                                                                        {% else %}<span class="diva-yn-dash">—</span>{% endif %}
+                                                                    </td>
+                                                                    <td class="text-center">
+                                                                        {% if cVal == 'oui' %}<span class="diva-yn-oui">OUI</span>
+                                                                        {% elseif cVal == 'non' %}<span class="diva-yn-non">NON</span>
+                                                                        {% else %}<span class="diva-yn-dash">—</span>{% endif %}
+                                                                    </td>
+                                                                    <td class="small text-muted">
+                                                                        {% if aComment %}<div><em>Adulte :</em> {{ aComment }}</div>{% endif %}
+                                                                        {% if cComment %}<div><em>Enfance :</em> {{ cComment }}</div>{% endif %}
+                                                                    </td>
+                                                                </tr>
+                                                            {% else %}
+                                                                {% set fVal     = dAns[item.id] ?? null %}
+                                                                {% set fComment = dAns[item.id ~ '_comment'] ?? '' %}
+                                                                <tr>
+                                                                    <td class="fw-bold text-muted">{{ item.id }}</td>
+                                                                    <td class="small">{{ item.text }}</td>
+                                                                    <td class="text-center">
+                                                                        {% if fVal == 'oui' %}<span class="diva-yn-oui">OUI</span>
+                                                                        {% elseif fVal == 'non' %}<span class="diva-yn-non">NON</span>
+                                                                        {% else %}<span class="diva-yn-dash">—</span>{% endif %}
+                                                                    </td>
+                                                                    <td class="small text-muted">
+                                                                        {% if fComment %}{{ fComment }}{% endif %}
+                                                                    </td>
+                                                                </tr>
+                                                            {% endif %}
+                                                            {% endfor %}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="px-4 py-2 text-muted small d-flex gap-4 border-top">
+                                        <span>Commencé : {{ response.startedAt ? response.startedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                        <span>Terminé : {{ response.completedAt ? response.completedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                    </div>
+
+                                {# ══════════════════════════════════════════════
+                                   STANDARD / RICH mode (HAD, Brown ENF, etc.)
+                                   ══════════════════════════════════════════════ #}
+                                {% elseif q.questions.items is defined %}
+                                    {% if q.description %}
+                                        <div class="px-4 pt-3 text-muted small">{{ q.description }}</div>
+                                    {% endif %}
+
+                                    {# Build cluster color palette #}
+                                    {% set palette = ['bg-warning-lt text-warning','bg-success-lt text-success','bg-blue-lt text-blue','bg-azure-lt text-azure','bg-teal-lt text-teal','bg-pink-lt text-pink','bg-orange-lt text-orange','bg-indigo-lt text-indigo'] %}
+                                    {% set clusterLabels = {} %}
+                                    {% set clusterColors = {} %}
+                                    {% if q.questions.sous_echelles is defined %}
+                                        {% for se in q.questions.sous_echelles %}
+                                            {% set clusterLabels = clusterLabels|merge({(se.id): se.label}) %}
+                                            {% set clusterColors = clusterColors|merge({(se.id): palette[loop.index0 % palette|length]}) %}
+                                        {% endfor %}
+                                    {% endif %}
+
+                                    <table class="table table-sm table-vcenter mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 3rem;">#</th>
+                                                <th>Question</th>
+                                                <th>Réponse</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% set itemList = q.questions.items|sort((a, b) => a.ordre_affichage <=> b.ordre_affichage) %}
+                                            {% for item in itemList %}
+                                                {% set answer = response.answers[item.id] ?? '—' %}
+                                                {% set selectedLabel = '—' %}
+                                                {% if answer != '—' %}
+                                                    {% for opt in item.options %}
+                                                        {% if opt.valeur ~ '' == answer ~ '' %}
+                                                            {% set selectedLabel = (opt.code is defined ? opt.code ~ ' — ' : '') ~ opt.label ~ ' (' ~ opt.valeur ~ ')' %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endif %}
+                                                <tr>
+                                                    <td class="text-muted">{{ item.ordre_affichage }}</td>
+                                                    <td>
+                                                        {% set badgeClass = clusterColors[item.sous_echelle] ?? 'bg-secondary-lt text-secondary' %}
+                                                        {% set badgeShort = (clusterLabels[item.sous_echelle] ?? item.sous_echelle)|slice(0,4)|upper %}
+                                                        <span class="badge {{ badgeClass }} me-1" style="font-size:.6rem;">{{ badgeShort }}</span>
+                                                        {{ item.texte }}
+                                                    </td>
+                                                    <td>{{ selectedLabel }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        {% if response.score is not null %}
+                                            <tfoot class="table-light">
+                                                {% if q.questions.sous_echelles is defined %}
+                                                    {% for se in q.questions.sous_echelles %}
+                                                        {% set seScore = response.answers['_score_' ~ se.id] ?? '—' %}
+                                                        <tr>
+                                                            <td colspan="2" class="text-end fw-bold">Score {{ se.label }}</td>
+                                                            <td class="fw-bold text-blue">{{ seScore }} / {{ se.score_max }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                {% endif %}
+                                                <tr>
+                                                    <td colspan="2" class="text-end fw-bold">Score total</td>
+                                                    <td class="fw-bold text-blue">{{ response.score }}</td>
+                                                </tr>
+                                            </tfoot>
+                                        {% endif %}
+                                    </table>
+
+                                    <div class="px-4 py-2 text-muted small d-flex gap-4">
+                                        <span>Commencé : {{ response.startedAt ? response.startedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                        <span>Terminé : {{ response.completedAt ? response.completedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                    </div>
+
+                                {% else %}
+                                    {# Legacy simple format #}
+                                    {% if q.description %}
+                                        <div class="px-4 pt-3 text-muted small">{{ q.description }}</div>
+                                    {% endif %}
+                                    <table class="table table-sm table-vcenter mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 3rem;">#</th>
+                                                <th>Question</th>
+                                                <th>Réponse</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for idx, question in q.questions %}
+                                                {% set answer = response.answers[idx ~ ''] ?? '—' %}
+                                                <tr>
+                                                    <td class="text-muted">{{ loop.index }}</td>
+                                                    <td>{{ question.text ?? question.label ?? '?' }}</td>
+                                                    <td>
+                                                        {% if answer is iterable %}
+                                                            {{ answer|join(', ') }}
+                                                        {% else %}
+                                                            {{ answer }}
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    <div class="px-4 py-2 text-muted small d-flex gap-4">
+                                        <span>Commencé : {{ response.startedAt ? response.startedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                        <span>Terminé : {{ response.completedAt ? response.completedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                    </div>
+                                {% endif %}
+
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════════
+   Brown ENS — Comparaison multi-passations (si > 1 complète)
+   ══════════════════════════════════════════════════════════════ #}
+{% set brownEnsResponses = [] %}
+{% for r in responses %}
+    {% if r.questionnaire.slug == 'brown_ens_8_12' and r.isComplete %}
+        {% set brownEnsResponses = brownEnsResponses|merge([r]) %}
+    {% endif %}
+{% endfor %}
+
+{% if brownEnsResponses|length > 1 %}
+<div class="card mt-4 mb-5">
+    <div class="card-header fw-bold text-white" style="background:#4A9A9A;">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chart-line me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><polyline points="4 19 8 13 12 15 16 10 20 14"/><line x1="4" y1="4" x2="4" y2="20"/><line x1="4" y1="20" x2="20" y2="20"/></svg>
+        Évolution — Brown ENS 8-12 ({{ brownEnsResponses|length }} passations)
+    </div>
+    <div class="card-body">
+        {% set firstQ = brownEnsResponses[0].questionnaire %}
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cluster</th>
+                        {% for r in brownEnsResponses %}
+                        <th class="text-center" style="min-width:130px;">
+                            {{ r.completedAt ? r.completedAt|date('d/m/Y') : r.startedAt|date('d/m/Y') }}
+                            {% if r.answers['_meta_evaluateur'] is defined %}
+                                <br><small class="text-muted fw-normal">{{ r.answers['_meta_evaluateur'] }}</small>
+                            {% endif %}
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if firstQ.questions.sous_echelles is defined %}
+                        {% set totalMax = 0 %}
+                        {% for se in firstQ.questions.sous_echelles %}
+                            {% set totalMax = totalMax + se.score_max %}
+                            <tr>
+                                <td class="fw-semibold">{{ se.label }}</td>
+                                {% for r in brownEnsResponses %}
+                                    {% set seScore = r.answers['_score_' ~ se.id] ?? 0 %}
+                                    {% set pct = se.score_max > 0 ? (seScore / se.score_max * 100)|round : 0 %}
+                                    <td class="text-center">
+                                        <span class="fw-bold">{{ seScore }}</span>
+                                        <span class="text-muted small">/{{ se.score_max }}</span>
+                                        <br>
+                                        <span class="badge small
+                                            {% if pct <= 33 %}ens-badge-low
+                                            {% elseif pct <= 66 %}ens-badge-mid
+                                            {% else %}ens-badge-high{% endif %}">
+                                            {{ pct }}%
+                                        </span>
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                        <tr class="table-light fw-bold">
+                            <td>TOTAL</td>
+                            {% for r in brownEnsResponses %}
+                                {% set totalScore = 0 %}
+                                {% for se in firstQ.questions.sous_echelles %}
+                                    {% set totalScore = totalScore + (r.answers['_score_' ~ se.id] ?? 0) %}
+                                {% endfor %}
+                                {% set totalPct = totalMax > 0 ? (totalScore / totalMax * 100)|round : 0 %}
+                                <td class="text-center">
+                                    <span>{{ totalScore }}</span>
+                                    <span class="text-muted small">/{{ totalMax }}</span>
+                                    <br>
+                                    <span class="badge small
+                                        {% if totalPct <= 33 %}ens-badge-low
+                                        {% elseif totalPct <= 66 %}ens-badge-mid
+                                        {% else %}ens-badge-high{% endif %}">
+                                        {{ totalPct }}%
+                                    </span>
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="mb-4"></div>
+{% endif %}
+
+{# ══════════════════════════════════════════════════════════════
+   Brown ENF Parents — Comparaison multi-passations (si > 1 complète)
+   ══════════════════════════════════════════════════════════════ #}
+{% set brownParentsResponses = [] %}
+{% for r in responses %}
+    {% if r.questionnaire.slug == 'brown_enf_8_12_parents' and r.isComplete %}
+        {% set brownParentsResponses = brownParentsResponses|merge([r]) %}
+    {% endif %}
+{% endfor %}
+
+{% if brownParentsResponses|length > 1 %}
+<div class="card mt-4 mb-5">
+    <div class="card-header fw-bold text-white" style="background:#1a6fa8;">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chart-line me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><polyline points="4 19 8 13 12 15 16 10 20 14"/><line x1="4" y1="4" x2="4" y2="20"/><line x1="4" y1="20" x2="20" y2="20"/></svg>
+        Évolution — Brown ENF 8-12 Parents ({{ brownParentsResponses|length }} passations)
+    </div>
+    <div class="card-body">
+        {% set firstQ = brownParentsResponses[0].questionnaire %}
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cluster</th>
+                        {% for r in brownParentsResponses %}
+                        <th class="text-center" style="min-width:130px;">
+                            {{ r.completedAt ? r.completedAt|date('d/m/Y') : r.startedAt|date('d/m/Y') }}
+                            {% if r.answers['_meta_evaluateur'] is defined and r.answers['_meta_evaluateur'] is not empty %}
+                                <br><small class="text-muted fw-normal">{{ r.answers['_meta_evaluateur'] }}</small>
+                                {% if r.answers['_meta_lien_parente'] is defined and r.answers['_meta_lien_parente'] is not empty %}
+                                    <br><small class="text-muted fw-normal">({{ r.answers['_meta_lien_parente'] }})</small>
+                                {% endif %}
+                            {% else %}
+                                {% set evPrenom = r.answers['_meta_evaluateur_prenom'] ?? '' %}
+                                {% set evNom = r.answers['_meta_evaluateur_nom'] ?? '' %}
+                                {% if evNom is not empty %}
+                                    <br><small class="text-muted fw-normal">{{ evPrenom ~ ' ' ~ evNom }}</small>
+                                {% endif %}
+                            {% endif %}
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if firstQ.questions.sous_echelles is defined %}
+                        {% set totalMax = 0 %}
+                        {% for se in firstQ.questions.sous_echelles %}
+                            {% set totalMax = totalMax + se.score_max %}
+                            <tr>
+                                <td class="fw-semibold">{{ se.label }}</td>
+                                {% for r in brownParentsResponses %}
+                                    {% set seScore = r.answers['_score_' ~ se.id] ?? 0 %}
+                                    {% set pct = se.score_max > 0 ? (seScore / se.score_max * 100)|round : 0 %}
+                                    <td class="text-center">
+                                        <span class="fw-bold">{{ seScore }}</span>
+                                        <span class="text-muted small">/{{ se.score_max }}</span>
+                                        <br>
+                                        <span class="badge small
+                                            {% if pct <= 33 %}ens-badge-low
+                                            {% elseif pct <= 66 %}ens-badge-mid
+                                            {% else %}ens-badge-high{% endif %}">
+                                            {{ pct }}%
+                                        </span>
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                        <tr class="table-light fw-bold">
+                            <td>TOTAL</td>
+                            {% for r in brownParentsResponses %}
+                                {% set totalScore = 0 %}
+                                {% for se in firstQ.questions.sous_echelles %}
+                                    {% set totalScore = totalScore + (r.answers['_score_' ~ se.id] ?? 0) %}
+                                {% endfor %}
+                                {% set totalPct = totalMax > 0 ? (totalScore / totalMax * 100)|round : 0 %}
+                                <td class="text-center">
+                                    <span>{{ totalScore }}</span>
+                                    <span class="text-muted small">/{{ totalMax }}</span>
+                                    <br>
+                                    <span class="badge small
+                                        {% if totalPct <= 33 %}ens-badge-low
+                                        {% elseif totalPct <= 66 %}ens-badge-mid
+                                        {% else %}ens-badge-high{% endif %}">
+                                        {{ totalPct }}%
+                                    </span>
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="mb-5"></div>
+{% endif %}
+
+{% endblock %}

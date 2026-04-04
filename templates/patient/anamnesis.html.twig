@@ -1,0 +1,239 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon anamnèse — AutoEval{% endblock %}
+
+{% block navbar %}
+<header class="navbar navbar-expand-md navbar-dark bg-blue-lt d-print-none">
+    <div class="container-xl">
+        <a href="{{ path('app_home') }}" class="navbar-brand navbar-brand-autodark">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brain me-2" width="28" height="28" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M15.5 13a3.5 3.5 0 0 0 -3.5 3.5v1a3.5 3.5 0 0 0 7 0v-1.8"/>
+                <path d="M8.5 13a3.5 3.5 0 0 1 3.5 3.5v1a3.5 3.5 0 0 1 -7 0v-1.8"/>
+                <path d="M17.5 16a3.5 3.5 0 0 0 0 -7h-.5"/>
+                <path d="M19 9.3v-2.8a3.5 3.5 0 0 0 -7 0"/>
+                <path d="M6.5 16a3.5 3.5 0 0 1 0 -7h.5"/>
+                <path d="M5 9.3v-2.8a3.5 3.5 0 0 1 7 0v10"/>
+            </svg>
+            <strong>AutoEval</strong>
+        </a>
+        <div class="navbar-nav ms-auto d-flex align-items-center gap-3">
+            <span class="text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <circle cx="12" cy="7" r="4"/>
+                    <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+                </svg>
+                {{ app.user.firstName }}
+            </span>
+            <a href="{{ path('app_logout') }}" class="btn btn-outline-light btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-logout me-1" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/>
+                    <path d="M9 12h12l-3 -3"/>
+                    <path d="M18 15l3 -3"/>
+                </svg>
+                Déconnexion
+            </a>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block body %}
+
+{# Fil d'Ariane #}
+<div class="page-header mt-3">
+    <div class="row align-items-center">
+        <div class="col">
+            <ol class="breadcrumb" aria-label="breadcrumbs">
+                <li class="breadcrumb-item"><a href="{{ path('app_patient_dashboard') }}">Accueil</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Mon anamnèse</li>
+            </ol>
+            <h2 class="page-title mt-1">
+                {{ definition.title }}
+            </h2>
+            <p class="text-muted small mb-0">{{ definition.description }}</p>
+            {% if anamnesis.isComplete %}
+                <div class="text-success mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-circle-check me-1" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M9 12l2 2l4 -4"/>
+                    </svg>
+                    Anamnèse marquée comme terminée — vous pouvez encore la modifier.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# Barre de progression #}
+<div class="card mb-4 mt-3">
+    <div class="card-body py-2">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <small class="text-muted">Progression du formulaire</small>
+            <small class="text-muted fw-bold" id="progress-label">0 %</small>
+        </div>
+        <div class="progress" style="height: 8px;">
+            <div class="progress-bar bg-blue" id="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+    </div>
+</div>
+
+<form method="POST" action="{{ path('app_patient_anamnesis') }}" id="anamnesis-form" novalidate>
+    <input type="hidden" name="_token" value="{{ csrf_token('anamnesis') }}">
+    <input type="hidden" name="_form_type" value="{{ formType }}">
+
+    {% for section in definition.sections %}
+    <div class="card mb-4">
+        <div class="card-header bg-blue-lt">
+            <h3 class="card-title">{{ section.title }}</h3>
+        </div>
+        <div class="card-body">
+            {% for field in section.fields %}
+            <div class="mb-3">
+                <label class="form-label{% if field.required is defined and field.required %} fw-semibold{% endif %}" for="field_{{ field.id }}">
+                    {{ field.label }}{% if field.required is defined and field.required %} <span class="text-danger">*</span>{% endif %}
+                </label>
+
+                {% if field.description is defined and field.description %}
+                    <div class="text-muted small mb-1">{{ field.description }}</div>
+                {% endif %}
+
+                {% set currentVal = existingData[field.id] ?? '' %}
+
+                {% if field.type == 'textarea' %}
+                    <textarea
+                        id="field_{{ field.id }}"
+                        name="fields[{{ field.id }}]"
+                        class="form-control"
+                        rows="4"
+                        {% if field.placeholder is defined %}placeholder="{{ field.placeholder }}"{% endif %}
+                        {% if field.required is defined and field.required %}required{% endif %}
+                    >{{ currentVal }}</textarea>
+
+                {% elseif field.type == 'select' %}
+                    <select
+                        id="field_{{ field.id }}"
+                        name="fields[{{ field.id }}]"
+                        class="form-select"
+                        {% if field.required is defined and field.required %}required{% endif %}
+                    >
+                        <option value="">— Sélectionner —</option>
+                        {% for opt in field.options %}
+                            <option value="{{ opt.value }}"{% if currentVal == opt.value %} selected{% endif %}>{{ opt.label }}</option>
+                        {% endfor %}
+                    </select>
+
+                {% elseif field.type == 'date' %}
+                    <input
+                        type="date"
+                        id="field_{{ field.id }}"
+                        name="fields[{{ field.id }}]"
+                        class="form-control"
+                        value="{{ currentVal }}"
+                        {% if field.required is defined and field.required %}required{% endif %}
+                    >
+
+                {% else %}
+                    <input
+                        type="text"
+                        id="field_{{ field.id }}"
+                        name="fields[{{ field.id }}]"
+                        class="form-control"
+                        value="{{ currentVal }}"
+                        {% if field.placeholder is defined %}placeholder="{{ field.placeholder }}"{% endif %}
+                        {% if field.required is defined and field.required %}required{% endif %}
+                    >
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+    {# Espace pour la barre sticky #}
+    <div style="height: 80px;"></div>
+
+</form>
+
+{% endblock %}
+
+{% block javascripts %}
+<script>
+(function () {
+    const form = document.getElementById('anamnesis-form');
+    const bar  = document.getElementById('progress-bar');
+    const lbl  = document.getElementById('progress-label');
+
+    function updateProgress() {
+        const fields = form.querySelectorAll('input:not([type=hidden]), textarea, select');
+        const total  = fields.length;
+        if (total === 0) return;
+        let filled = 0;
+        fields.forEach(function (f) {
+            if (f.value && f.value.trim() !== '') filled++;
+        });
+        const pct = Math.round((filled / total) * 100);
+        bar.style.width = pct + '%';
+        bar.setAttribute('aria-valuenow', pct);
+        lbl.textContent = pct + ' %';
+    }
+
+    form.addEventListener('input', updateProgress);
+    updateProgress();
+})();
+</script>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+.sticky-actions {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+    background: #fff;
+    border-top: 1px solid #e6e7e9;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.08);
+    padding: .75rem 0;
+}
+</style>
+<div class="sticky-actions">
+    <div class="container-xl d-flex align-items-center justify-content-between">
+        <small class="text-muted">
+            {% if anamnesis.updatedAt %}
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <circle cx="12" cy="12" r="9"/>
+                    <polyline points="12 7 12 12 15 15"/>
+                </svg>
+                Dernière sauvegarde : {{ anamnesis.updatedAt|date('d/m/Y à H:i') }}
+            {% else %}
+                Non encore enregistrée
+            {% endif %}
+        </small>
+        <div class="d-flex gap-2">
+            <button type="submit" form="anamnesis-form" name="action" value="save" class="btn btn-outline-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-device-floppy me-1" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2"/>
+                    <circle cx="12" cy="14" r="2"/>
+                    <polyline points="14 4 14 8 8 8 8 4"/>
+                </svg>
+                Enregistrer le brouillon
+            </button>
+            <button type="submit" form="anamnesis-form" name="action" value="complete" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-circle-check me-1" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M9 12l2 2l4 -4"/>
+                </svg>
+                Enregistrer et terminer
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

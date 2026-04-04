@@ -1,0 +1,69 @@
+{
+  "formType": "adolescent",
+  "title": "Anamnèse Neuropsychologique — Adolescent",
+  "description": "Ce formulaire peut être rempli par le ou les parents, ou par l'adolescent lui-même avec l'aide de sa famille. Toutes les informations sont strictement confidentielles.",
+  "ageRange": "13-18 ans",
+  "sections": [
+    {
+      "id": "identite",
+      "title": "Informations générales",
+      "fields": [
+        {"id": "nom_adolescent",  "type": "text", "label": "Nom et prénom de l'adolescent", "required": true},
+        {"id": "date_naissance",  "type": "date", "label": "Date de naissance",              "required": true},
+        {"id": "nom_parents",     "type": "text", "label": "Nom des parents ou représentants légaux", "description": "Personnes remplissant le questionnaire."}
+      ]
+    },
+    {
+      "id": "motif",
+      "title": "Motif de la consultation",
+      "fields": [
+        {"id": "motif_consultation", "type": "textarea", "label": "Pourquoi consultez-vous pour un bilan neuropsychologique ?", "required": true, "placeholder": "Ex : difficultés d'attention, troubles de mémoire, décrochage scolaire, anxiété importante…"},
+        {"id": "depuis_quand",       "type": "textarea", "label": "Depuis quand et dans quelles circonstances ces difficultés sont-elles apparues ?", "description": "Y a-t-il eu un événement déclencheur identifiable ?"}
+      ]
+    },
+    {
+      "id": "antecedents",
+      "title": "Antécédents médicaux et développementaux",
+      "fields": [
+        {"id": "antecedents_medicaux",  "type": "textarea", "label": "Antécédents médicaux",              "description": "Maladies chroniques, hospitalisations, traumatismes, chirurgies, problèmes neurologiques ou sensoriels."},
+        {"id": "antecedents_familiaux", "type": "textarea", "label": "Antécédents familiaux",              "description": "Troubles de l'apprentissage, TDAH, troubles anxieux, dépression, autisme ou autres dans la famille proche."},
+        {"id": "developpement_precoce", "type": "textarea", "label": "Développement précoce",              "description": "Y a-t-il eu des retards de parole, de marche, ou des difficultés précoces à l'école primaire ?"}
+      ]
+    },
+    {
+      "id": "psychiatrique",
+      "title": "Santé mentale et bien-être",
+      "fields": [
+        {"id": "suivi_psy",       "type": "textarea", "label": "Suivis psychologiques ou psychiatriques antérieurs ou en cours", "description": "Thérapies, hospitalisations en pédopsychiatrie, diagnostics posés éventuels."},
+        {"id": "humeur",          "type": "textarea", "label": "Humeur et état émotionnel",                "description": "L'adolescent présente-t-il des signes d'anxiété, de dépression, de repli sur soi, d'irritabilité fréquente ?"},
+        {"id": "estime_de_soi",   "type": "textarea", "label": "Estime de soi et confiance",               "description": "Comment l'adolescent se perçoit-il ? Y a-t-il des attitudes de dévalorisation, d'évitement ?"}
+      ]
+    },
+    {
+      "id": "scolaire",
+      "title": "Scolarité actuelle",
+      "fields": [
+        {"id": "niveau_scolaire",      "type": "text",     "label": "Classe et établissement",              "description": "Ex : Seconde, lycée général — ou classe ULIS, CFA…"},
+        {"id": "difficultes_scolaires","type": "textarea", "label": "Difficultés scolaires observées",      "description": "Matières concernées, méthodes de travail, gestion du temps, résultats."},
+        {"id": "amenagements",         "type": "textarea", "label": "Aménagements scolaires déjà en place", "description": "PAP, PPS, temps majoré, aide humaine…"}
+      ]
+    },
+    {
+      "id": "social",
+      "title": "Vie sociale et familiale",
+      "fields": [
+        {"id": "vie_sociale",   "type": "textarea", "label": "Relations avec les pairs",            "description": "L'adolescent a-t-il des amis ? Comment se déroulent ses interactions sociales ?"},
+        {"id": "vie_familiale", "type": "textarea", "label": "Contexte familial",                   "description": "Structure familiale, ambiance à la maison, événements familiaux importants récents."},
+        {"id": "activites",     "type": "textarea", "label": "Activités extrascolaires et loisirs", "description": "Sports, musique, jeux vidéo, centres d'intérêt particuliers."}
+      ]
+    },
+    {
+      "id": "traitements",
+      "title": "Traitements et suivis en cours",
+      "fields": [
+        {"id": "traitements_en_cours", "type": "textarea", "label": "Traitements médicamenteux en cours", "description": "Nom, posologie, depuis quand."},
+        {"id": "autres_suivis",        "type": "textarea", "label": "Autres suivis (orthophonie, psychomotricité, etc.)", "description": "Fréquence et durée du suivi."}
+      ]
+    }
+  ]
+}

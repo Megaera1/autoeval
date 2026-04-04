@@ -1,0 +1,130 @@
+{
+  "id": "diva",
+  "nom": "DIVA 2.0 — Entretien diagnostique pour le TDAH chez l'adulte",
+  "instructions": "Entretien diagnostique structuré pour le TDAH chez l'adulte selon les critères DSM-IV. Évalue les symptômes actuels (adulte) et rétrospectifs (enfance 5–12 ans) ainsi que le retentissement fonctionnel.",
+  "diva_mode": true,
+  "auteurs": "J.J.S. Kooij & M.H. Francken",
+  "editeur": "DIVA Foundation",
+  "tranche_age": "Adulte",
+  "sections": [
+    {
+      "id": "inattention",
+      "label": "Section 1 — Déficit de l'attention",
+      "short_label": "Inattention",
+      "code_prefix": "A",
+      "has_periods": true,
+      "items": [
+        {
+          "id": "A1", "num": 1,
+          "text": "Avez-vous souvent du mal à prêter attention aux détails ou faites-vous des erreurs d'étourderie dans votre travail ou vos activités ?"
+        },
+        {
+          "id": "A2", "num": 2,
+          "text": "Avez-vous souvent du mal à soutenir votre attention au travail ou dans des activités de loisirs ?"
+        },
+        {
+          "id": "A3", "num": 3,
+          "text": "Semblez-vous souvent ne pas écouter quand on vous parle directement ?"
+        },
+        {
+          "id": "A4", "num": 4,
+          "text": "Ne vous conformez-vous souvent pas aux consignes et ne terminez-vous pas vos tâches professionnelles, vos corvées domestiques ou vos obligations ?"
+        },
+        {
+          "id": "A5", "num": 5,
+          "text": "Avez-vous souvent du mal à organiser vos tâches ou activités ?"
+        },
+        {
+          "id": "A6", "num": 6,
+          "text": "Évitez-vous souvent, n'aimez-vous pas ou rechignez-vous à vous engager dans des tâches qui nécessitent un effort mental soutenu ?"
+        },
+        {
+          "id": "A7", "num": 7,
+          "text": "Perdez-vous souvent des objets nécessaires à vos activités (clés, portefeuille, lunettes, documents, téléphone) ?"
+        },
+        {
+          "id": "A8", "num": 8,
+          "text": "Êtes-vous souvent facilement distrait par des stimuli externes ?"
+        },
+        {
+          "id": "A9", "num": 9,
+          "text": "Êtes-vous souvent oublieux dans vos activités quotidiennes ?"
+        }
+      ]
+    },
+    {
+      "id": "hyperactivite",
+      "label": "Section 2 — Hyperactivité / Impulsivité",
+      "short_label": "Hyperact. / Impulsivité",
+      "code_prefix": "H",
+      "has_periods": true,
+      "items": [
+        {
+          "id": "H1", "num": 1,
+          "text": "Remuez-vous souvent les mains ou les pieds, ou vous agitez-vous sur votre siège ?"
+        },
+        {
+          "id": "H2", "num": 2,
+          "text": "Vous levez-vous souvent dans des situations où vous êtes censé rester assis ?"
+        },
+        {
+          "id": "H3", "num": 3,
+          "text": "Ressentez-vous souvent un sentiment d'agitation intérieure, de fébrilité ?"
+        },
+        {
+          "id": "H4", "num": 4,
+          "text": "Avez-vous souvent du mal à vous tenir tranquille ou à vous détendre dans vos loisirs ?"
+        },
+        {
+          "id": "H5", "num": 5,
+          "text": "Êtes-vous souvent « sur la brèche » ou agissez-vous souvent comme si vous étiez « dirigé par un moteur » ?"
+        },
+        {
+          "id": "H6", "num": 6,
+          "text": "Parlez-vous souvent trop ?"
+        },
+        {
+          "id": "H7", "num": 7,
+          "text": "Laissez-vous souvent échapper la réponse avant même que la question ne soit terminée ?"
+        },
+        {
+          "id": "H8", "num": 8,
+          "text": "Avez-vous souvent du mal à attendre votre tour ?"
+        },
+        {
+          "id": "H9", "num": 9,
+          "text": "Interrompez-vous souvent les autres ou vous imposez-vous (dans des conversations, des jeux, des activités) ?"
+        }
+      ]
+    },
+    {
+      "id": "fonctionnement",
+      "label": "Section 3 — Retentissement fonctionnel",
+      "short_label": "Fonctionnement",
+      "code_prefix": "F",
+      "has_periods": false,
+      "items": [
+        {
+          "id": "F1", "num": 1,
+          "text": "Travail / études : les symptômes ont-ils affecté votre travail, vos études ou votre performance professionnelle ?"
+        },
+        {
+          "id": "F2", "num": 2,
+          "text": "Relations familiales / amoureuses : les symptômes ont-ils affecté vos relations avec votre partenaire ou votre famille ?"
+        },
+        {
+          "id": "F3", "num": 3,
+          "text": "Vie sociale / contacts sociaux : les symptômes ont-ils affecté vos relations sociales ou vos amitiés ?"
+        },
+        {
+          "id": "F4", "num": 4,
+          "text": "Temps libre / loisirs : les symptômes ont-ils affecté vos activités de loisirs ou vos hobbies ?"
+        },
+        {
+          "id": "F5", "num": 5,
+          "text": "Confiance en soi / image de soi : les symptômes ont-ils affecté votre estime de vous-même ou votre confiance en vous ?"
+        }
+      ]
+    }
+  ]
+}

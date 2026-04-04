@@ -1,0 +1,653 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ questionnaire.title }} — AutoEval{% endblock %}
+
+{% block navbar %}
+<header class="navbar navbar-expand-md navbar-dark d-print-none" style="background:#2c5282;">
+    <div class="container-xl">
+        <a href="{{ path('app_home') }}" class="navbar-brand navbar-brand-autodark">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brain me-2" width="28" height="28" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M15.5 13a3.5 3.5 0 0 0 -3.5 3.5v1a3.5 3.5 0 0 0 7 0v-1.8"/>
+                <path d="M8.5 13a3.5 3.5 0 0 1 3.5 3.5v1a3.5 3.5 0 0 1 -7 0v-1.8"/>
+                <path d="M17.5 16a3.5 3.5 0 0 0 0 -7h-.5"/>
+                <path d="M19 9.3v-2.8a3.5 3.5 0 0 0 -7 0"/>
+                <path d="M6.5 16a3.5 3.5 0 0 1 0 -7h.5"/>
+                <path d="M5 9.3v-2.8a3.5 3.5 0 0 1 7 0v10"/>
+            </svg>
+            <strong>AutoEval</strong>
+        </a>
+        <div class="navbar-nav ms-auto d-flex align-items-center gap-3">
+            <span class="text-white">{{ app.user.firstName }}</span>
+            <a href="{{ path('app_logout') }}" class="btn btn-outline-light btn-sm">Déconnexion</a>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+:root {
+    --diva-blue:  #2c5282;
+    --diva-light: #ebf4ff;
+    --diva-border:#bee3f8;
+}
+
+/* Progress bar */
+.diva-progress { height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; }
+.diva-progress-bar { height:100%; background:var(--diva-blue); transition:width .35s; }
+
+/* Section tabs */
+.diva-tabs { display:flex; gap:.5rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+.diva-tab {
+    padding:.45rem 1.1rem; border-radius:8px; cursor:pointer; font-weight:600;
+    font-size:.88rem; border:2px solid #cbd5e0; background:#fff; color:#4a5568;
+    transition:all .15s;
+}
+.diva-tab:hover { border-color:var(--diva-blue); color:var(--diva-blue); }
+.diva-tab.active { background:var(--diva-blue); color:#fff; border-color:var(--diva-blue); }
+.diva-tab .diva-tab-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:1.4rem; height:1.4rem; border-radius:50%; font-size:.72rem;
+    background:rgba(255,255,255,.25); margin-left:.4rem;
+}
+.diva-tab:not(.active) .diva-tab-badge { background:#e2e8f0; color:#4a5568; }
+
+/* Section panel */
+.diva-section { display:none; }
+.diva-section.active { display:block; }
+
+/* Item card */
+.diva-item {
+    border:1.5px solid #e2e8f0; border-radius:10px; margin-bottom:1.1rem;
+    transition:border-color .15s, box-shadow .15s;
+    background:#fff;
+}
+.diva-item.answered-full { border-left:4px solid var(--diva-blue); }
+.diva-item.answered-partial { border-left:4px solid #f6ad55; }
+.diva-item-header {
+    padding:.75rem 1.1rem .5rem;
+    font-weight:600; font-size:1.02rem; line-height:1.55; color:#1a202c;
+}
+.diva-item-num {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:1.8rem; height:1.8rem; border-radius:50%;
+    background:var(--diva-blue); color:#fff; font-size:.82rem; font-weight:700;
+    flex-shrink:0; margin-right:.6rem;
+}
+.diva-item-body { padding:.5rem 1.1rem 1rem; }
+
+/* Period label */
+.diva-period-label {
+    font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    color:#718096; margin-bottom:.4rem; margin-top:.6rem;
+}
+
+/* Oui/Non radios */
+.diva-yn-group { display:flex; gap:.5rem; margin-bottom:.4rem; }
+.diva-yn-btn {
+    display:flex; align-items:center; gap:.4rem;
+    padding:.4rem .85rem; border:1.5px solid #cbd5e0; border-radius:7px;
+    cursor:pointer; font-weight:600; font-size:.9rem; background:#fff;
+    transition:all .12s; user-select:none;
+}
+.diva-yn-btn:hover { border-color:var(--diva-blue); background:var(--diva-light); }
+.diva-yn-btn.selected-oui { background:#c6f6d5; border-color:#38a169; color:#276749; }
+.diva-yn-btn.selected-non { background:#e2e8f0; border-color:#718096; color:#2d3748; }
+.diva-yn-btn input[type=radio] { display:none; }
+
+/* Comment textarea */
+.diva-comment-wrap { margin-top:.4rem; }
+.diva-comment-toggle {
+    font-size:.8rem; color:#718096; cursor:pointer; display:inline-flex;
+    align-items:center; gap:.25rem; background:none; border:none; padding:0;
+    text-decoration:underline dotted;
+}
+.diva-comment-toggle:hover { color:var(--diva-blue); }
+.diva-comment-area { margin-top:.35rem; display:none; }
+.diva-comment-area.open { display:block; }
+.diva-comment-area textarea {
+    width:100%; border-radius:7px; border:1.5px solid #cbd5e0;
+    padding:.5rem .75rem; font-size:.88rem; resize:vertical; min-height:56px;
+    font-family:inherit; color:#2d3748;
+    transition:border-color .12s;
+}
+.diva-comment-area textarea:focus {
+    outline:none; border-color:var(--diva-blue);
+    box-shadow:0 0 0 3px rgba(44,82,130,.12);
+}
+
+/* Divider between adult/child */
+.diva-period-divider { border:0; border-top:1px dashed #e2e8f0; margin:.7rem 0; }
+
+/* Consigne */
+.diva-consigne { border-left:4px solid var(--diva-blue); background:var(--diva-light); border-radius:0 8px 8px 0; padding:.85rem 1.1rem; margin-bottom:1.5rem; font-size:.93rem; }
+
+/* Sticky bottom bar */
+.diva-sticky-bar {
+    position:sticky; bottom:0; z-index:100;
+    background:#fff; border-top:1px solid #e2e8f0;
+    box-shadow:0 -2px 12px rgba(0,0,0,.08);
+    padding:.65rem 0;
+}
+.diva-status { font-size:.88rem; color:#718096; }
+.diva-autosave-status { font-size:.78rem; color:#a0aec0; }
+
+/* Nav buttons */
+.diva-nav-btn { min-width:100px; }
+
+/* Completion message */
+.diva-all-done { color:var(--diva-blue); font-weight:700; }
+
+/* Read-only mode */
+.diva-readonly { pointer-events: none; opacity: .82; user-select: text; }
+</style>
+{% endblock %}
+
+{% set questions = questionnaire.questions %}
+{% set sections  = questions.sections %}
+{% set existing  = response.answers ?? {} %}
+{% set autosaveUrl = path('app_patient_questionnaire_autosave', {slug: questionnaire.slug, responseId: response.id}) %}
+{% set submitUrl   = path('app_patient_questionnaire_fill',    {slug: questionnaire.slug, responseId: response.id}) %}
+{% set csrfToken   = csrf_token('questionnaire_' ~ questionnaire.id) %}
+
+{% block body %}
+{# Breadcrumb #}
+<div class="page-header mt-3">
+    <div class="row align-items-center">
+        <div class="col">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ path('app_patient_questionnaires') }}">Mes questionnaires</a></li>
+                <li class="breadcrumb-item active">{{ questionnaire.title }}</li>
+            </ol>
+            <h2 class="page-title mt-1">{{ questionnaire.title }}</h2>
+            <div class="d-flex align-items-center gap-3 flex-wrap mt-1">
+                <span class="text-muted small">{{ questions.auteurs }} — {{ questions.editeur }}</span>
+                {% set ageAtStart = response.patientAgeAtStart %}
+                {% if ageAtStart is not null %}
+                    <span class="badge bg-blue-lt text-blue" title="Âge au moment de la passation">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user me-1" width="14" height="14" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
+                        {{ ageAtStart }} ans
+                    </span>
+                {% endif %}
+                &nbsp;·&nbsp; <span id="diva-progress-label">Chargement…</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if readOnly %}
+<div class="alert alert-secondary d-flex align-items-center gap-2 mb-3" role="alert">
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-eye flex-shrink-0" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="2"/><path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7"/></svg>
+    <span>Consultation en lecture seule — passation du {{ response.completedAt ? response.completedAt|date('d/m/Y') : response.startedAt|date('d/m/Y') }}
+    {% if response.score is not null %} · Score : <strong>{{ response.score }}</strong>{% endif %}</span>
+    <a href="{{ path('app_patient_questionnaires') }}" class="btn btn-sm btn-outline-secondary ms-auto">← Retour</a>
+</div>
+{% endif %}
+
+{# Global progress bar #}
+<div class="diva-progress mb-3">
+    <div class="diva-progress-bar" id="diva-global-bar" style="width:0%"></div>
+</div>
+
+{# Consigne #}
+<div class="diva-consigne mb-3">
+    <strong>Comment répondre ?</strong><br>
+    Pour chaque question, indiquez <strong>Oui</strong> ou <strong>Non</strong> selon que le symptôme décrit vous correspond,
+    d'abord pour <strong>les 6 derniers mois</strong> (âge adulte), puis pour <strong>votre enfance (5–12 ans)</strong> si applicable.<br>
+    Vous pouvez ajouter un commentaire facultatif pour chaque réponse. Vos réponses sont sauvegardées automatiquement.
+</div>
+
+{# Section tabs #}
+<div class="diva-tabs" id="diva-tabs">
+    {% for section in sections %}
+    <button type="button" class="diva-tab{% if loop.first %} active{% endif %}"
+            data-section="{{ section.id }}" aria-selected="{{ loop.first ? 'true' : 'false' }}">
+        {{ section.short_label }}
+        <span class="diva-tab-badge" id="badge-{{ section.id }}">–</span>
+    </button>
+    {% endfor %}
+</div>
+
+{# Hidden form for final submission — answers are injected by JS before submit #}
+<form id="diva-form" action="{{ submitUrl }}" method="POST">
+    <input type="hidden" name="_token" value="{{ csrfToken }}">
+    <input type="hidden" name="action" value="complete">
+    {# Answers container — populated by JS #}
+    <div id="diva-answers-hidden"></div>
+</form>
+
+{# Section panels #}
+{% for section in sections %}
+<div class="diva-section{% if loop.first %} active{% endif %}{% if readOnly %} diva-readonly{% endif %}" id="section-{{ section.id }}">
+
+    <h5 class="fw-bold mb-3" style="color:var(--diva-blue);">{{ section.label }}</h5>
+
+    {% for item in section.items %}
+    {% set adultKey  = item.id ~ '_adult' %}
+    {% set childKey  = item.id ~ '_child' %}
+    {% set adultCommentKey = item.id ~ '_adult_comment' %}
+    {% set childCommentKey = item.id ~ '_child_comment' %}
+    {% set noPeriodsKey = item.id %}
+    {% set noPeriodsCommentKey = item.id ~ '_comment' %}
+
+    {% if section.has_periods %}
+        {% set hasAdult = existing[adultKey] is defined and existing[adultKey] is not null and existing[adultKey] != '' %}
+        {% set hasChild = existing[childKey] is defined and existing[childKey] is not null and existing[childKey] != '' %}
+        {% set answerClass = (hasAdult and hasChild) ? ' answered-full' : (hasAdult or hasChild ? ' answered-partial' : '') %}
+    {% else %}
+        {% set hasAnswer = existing[noPeriodsKey] is defined and existing[noPeriodsKey] is not null and existing[noPeriodsKey] != '' %}
+        {% set answerClass = hasAnswer ? ' answered-full' : '' %}
+    {% endif %}
+
+    <div class="diva-item{{ answerClass }}"
+         id="diva-item-{{ item.id }}"
+         data-id="{{ item.id }}"
+         data-has-periods="{{ section.has_periods ? '1' : '0' }}">
+        <div class="diva-item-header d-flex align-items-start">
+            <span class="diva-item-num">{{ item.num }}</span>
+            <span>{{ item.text }}</span>
+        </div>
+        <div class="diva-item-body">
+            {% if section.has_periods %}
+            {# Adult period #}
+            <div class="diva-period-label">Âge adulte — 6 derniers mois</div>
+            <div class="diva-yn-group" data-field="{{ adultKey }}">
+                <label class="diva-yn-btn{% if existing[adultKey] is defined and existing[adultKey] == 'oui' %} selected-oui{% endif %}">
+                    <input type="radio" name="{{ adultKey }}" value="oui"
+                           {% if existing[adultKey] is defined and existing[adultKey] == 'oui' %}checked{% endif %}>
+                    ✓ Oui
+                </label>
+                <label class="diva-yn-btn{% if existing[adultKey] is defined and existing[adultKey] == 'non' %} selected-non{% endif %}">
+                    <input type="radio" name="{{ adultKey }}" value="non"
+                           {% if existing[adultKey] is defined and existing[adultKey] == 'non' %}checked{% endif %}>
+                    ✗ Non
+                </label>
+            </div>
+            <div class="diva-comment-wrap">
+                <button type="button" class="diva-comment-toggle" data-target="comment-{{ adultKey }}">
+                    💬 Commentaire (facultatif)
+                </button>
+                <div class="diva-comment-area{% if existing[adultCommentKey] is defined and existing[adultCommentKey] != '' %} open{% endif %}" id="comment-{{ adultKey }}">
+                    <textarea name="{{ adultCommentKey }}" placeholder="Décrivez un exemple concret si vous le souhaitez…" rows="2">{{ existing[adultCommentKey] ?? '' }}</textarea>
+                </div>
+            </div>
+
+            <hr class="diva-period-divider">
+
+            {# Child period #}
+            <div class="diva-period-label">Enfance — 5 à 12 ans</div>
+            <div class="diva-yn-group" data-field="{{ childKey }}">
+                <label class="diva-yn-btn{% if existing[childKey] is defined and existing[childKey] == 'oui' %} selected-oui{% endif %}">
+                    <input type="radio" name="{{ childKey }}" value="oui"
+                           {% if existing[childKey] is defined and existing[childKey] == 'oui' %}checked{% endif %}>
+                    ✓ Oui
+                </label>
+                <label class="diva-yn-btn{% if existing[childKey] is defined and existing[childKey] == 'non' %} selected-non{% endif %}">
+                    <input type="radio" name="{{ childKey }}" value="non"
+                           {% if existing[childKey] is defined and existing[childKey] == 'non' %}checked{% endif %}>
+                    ✗ Non
+                </label>
+            </div>
+            <div class="diva-comment-wrap">
+                <button type="button" class="diva-comment-toggle" data-target="comment-{{ childKey }}">
+                    💬 Commentaire (facultatif)
+                </button>
+                <div class="diva-comment-area{% if existing[childCommentKey] is defined and existing[childCommentKey] != '' %} open{% endif %}" id="comment-{{ childKey }}">
+                    <textarea name="{{ childCommentKey }}" placeholder="Souvenirs d'enfance, exemples…" rows="2">{{ existing[childCommentKey] ?? '' }}</textarea>
+                </div>
+            </div>
+            {% else %}
+            {# No periods (Section 3 — Fonctionnement) #}
+            <div class="diva-yn-group" data-field="{{ noPeriodsKey }}">
+                <label class="diva-yn-btn{% if existing[noPeriodsKey] is defined and existing[noPeriodsKey] == 'oui' %} selected-oui{% endif %}">
+                    <input type="radio" name="{{ noPeriodsKey }}" value="oui"
+                           {% if existing[noPeriodsKey] is defined and existing[noPeriodsKey] == 'oui' %}checked{% endif %}>
+                    ✓ Oui
+                </label>
+                <label class="diva-yn-btn{% if existing[noPeriodsKey] is defined and existing[noPeriodsKey] == 'non' %} selected-non{% endif %}">
+                    <input type="radio" name="{{ noPeriodsKey }}" value="non"
+                           {% if existing[noPeriodsKey] is defined and existing[noPeriodsKey] == 'non' %}checked{% endif %}>
+                    ✗ Non
+                </label>
+            </div>
+            <div class="diva-comment-wrap">
+                <button type="button" class="diva-comment-toggle" data-target="comment-{{ noPeriodsKey }}">
+                    💬 Commentaire (facultatif)
+                </button>
+                <div class="diva-comment-area{% if existing[noPeriodsCommentKey] is defined and existing[noPeriodsCommentKey] != '' %} open{% endif %}" id="comment-{{ noPeriodsKey }}">
+                    <textarea name="{{ noPeriodsCommentKey }}" placeholder="Précisez si vous le souhaitez…" rows="2">{{ existing[noPeriodsCommentKey] ?? '' }}</textarea>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    {# Section navigation #}
+    <div class="d-flex justify-content-between mt-3 mb-4">
+        {% if not loop.first %}
+        <button type="button" class="btn btn-outline-secondary diva-nav-btn" data-nav="prev">
+            ← Précédent
+        </button>
+        {% else %}
+        <span></span>
+        {% endif %}
+
+        {% if not loop.last %}
+        <button type="button" class="btn btn-primary diva-nav-btn" data-nav="next" style="background:var(--diva-blue);border-color:var(--diva-blue);">
+            Suivant →
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
+{# Sticky action bar #}
+<div class="diva-sticky-bar">
+    <div class="container-xl">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+            <div>
+                <div class="diva-status" id="diva-status">Chargement…</div>
+                <div class="diva-autosave-status" id="diva-autosave-status"></div>
+            </div>
+            {% if readOnly %}
+            <a href="{{ path('app_patient_questionnaires') }}" class="btn btn-outline-secondary btn-sm">← Retour aux questionnaires</a>
+            {% else %}
+            <div class="d-flex gap-2">
+                <button type="button" id="diva-btn-save"
+                        class="btn btn-outline-secondary btn-sm">
+                    💾 Sauvegarder
+                </button>
+                <button type="button" id="diva-btn-submit" disabled
+                        class="btn btn-sm text-white fw-bold"
+                        style="background:var(--diva-blue);border-color:var(--diva-blue);opacity:.5;"
+                        title="Répondez à toutes les questions pour soumettre">
+                    ✓ Soumettre
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+(function () {
+'use strict';
+
+/* ── Data from Twig ── */
+const AUTOSAVE_URL = {{ autosaveUrl | json_encode | raw }};
+const SUBMIT_URL   = {{ submitUrl   | json_encode | raw }};
+const CSRF_TOKEN   = {{ csrfToken   | json_encode | raw }};
+const SECTIONS     = {{ sections    | json_encode | raw }};
+const READ_ONLY    = {{ readOnly ? 'true' : 'false' }};
+
+/* ── DOM refs ── */
+const tabsEl       = document.getElementById('diva-tabs');
+const statusEl     = document.getElementById('diva-status');
+const autosaveEl   = document.getElementById('diva-autosave-status');
+const progressBar  = document.getElementById('diva-global-bar');
+const progressLbl  = document.getElementById('diva-progress-label');
+const submitBtn    = document.getElementById('diva-btn-submit');
+const saveBtn      = document.getElementById('diva-btn-save');
+const hiddenCnt    = document.getElementById('diva-answers-hidden');
+const divaForm     = document.getElementById('diva-form');
+
+/* ── Section order list ── */
+const sectionIds = SECTIONS.map(s => s.id);
+let currentSection = sectionIds[0];
+
+/* ── Compute total required fields ── */
+function totalRequired() {
+    let n = 0;
+    SECTIONS.forEach(s => {
+        if (s.has_periods) {
+            n += s.items.length * 2; // adult + child
+        } else {
+            n += s.items.length;
+        }
+    });
+    return n;
+}
+const TOTAL = totalRequired();
+
+/* ── Collect all current answers from the DOM ── */
+function collectAnswers() {
+    const answers = {};
+    document.querySelectorAll('.diva-item').forEach(card => {
+        const id = card.dataset.id;
+        const hasPeriods = card.dataset.hasPeriods === '1';
+        if (hasPeriods) {
+            ['adult', 'child'].forEach(period => {
+                const key = id + '_' + period;
+                const checked = card.querySelector(`input[name="${key}"]:checked`);
+                if (checked) answers[key] = checked.value;
+                const ta = card.querySelector(`textarea[name="${key}_comment"]`);
+                if (ta && ta.value.trim()) answers[key + '_comment'] = ta.value.trim();
+            });
+        } else {
+            const checked = card.querySelector(`input[name="${id}"]:checked`);
+            if (checked) answers[id] = checked.value;
+            const ta = card.querySelector(`textarea[name="${id}_comment"]`);
+            if (ta && ta.value.trim()) answers[id + '_comment'] = ta.value.trim();
+        }
+    });
+    return answers;
+}
+
+/* ── Count answered required fields ── */
+function countAnswered() {
+    let n = 0;
+    SECTIONS.forEach(s => {
+        if (s.has_periods) {
+            s.items.forEach(item => {
+                const cardEl = document.getElementById('diva-item-' + item.id);
+                if (!cardEl) return;
+                if (cardEl.querySelector(`input[name="${item.id}_adult"]:checked`)) n++;
+                if (cardEl.querySelector(`input[name="${item.id}_child"]:checked`)) n++;
+            });
+        } else {
+            s.items.forEach(item => {
+                const cardEl = document.getElementById('diva-item-' + item.id);
+                if (!cardEl) return;
+                if (cardEl.querySelector(`input[name="${item.id}"]:checked`)) n++;
+            });
+        }
+    });
+    return n;
+}
+
+/* ── Update section badge ── */
+function updateSectionBadge(sectionId) {
+    const section = SECTIONS.find(s => s.id === sectionId);
+    if (!section) return;
+    let answered = 0, needed = 0;
+    if (section.has_periods) {
+        section.items.forEach(item => {
+            const card = document.getElementById('diva-item-' + item.id);
+            if (!card) return;
+            if (card.querySelector(`input[name="${item.id}_adult"]:checked`)) answered++;
+            if (card.querySelector(`input[name="${item.id}_child"]:checked`)) answered++;
+            needed += 2;
+        });
+    } else {
+        section.items.forEach(item => {
+            const card = document.getElementById('diva-item-' + item.id);
+            if (!card) return;
+            if (card.querySelector(`input[name="${item.id}"]:checked`)) answered++;
+            needed++;
+        });
+    }
+    const badge = document.getElementById('badge-' + sectionId);
+    if (badge) badge.textContent = answered + '/' + needed;
+}
+
+/* ── Update global UI ── */
+function updateUI() {
+    const answered = countAnswered();
+    const pct = Math.round(answered / TOTAL * 100);
+    if (progressBar) progressBar.style.width = pct + '%';
+    if (progressLbl) progressLbl.textContent = answered + ' / ' + TOTAL + ' réponses';
+
+    const allDone = (answered === TOTAL);
+    if (statusEl) {
+        if (allDone) {
+            statusEl.innerHTML = '<span class="diva-all-done">✓ Toutes les questions ont été répondues</span>';
+        } else {
+            statusEl.textContent = (TOTAL - answered) + ' réponse(s) manquante(s)';
+        }
+    }
+    if (submitBtn) {
+        submitBtn.disabled = !allDone;
+        submitBtn.style.opacity = allDone ? '1' : '.5';
+        submitBtn.title = allDone ? '' : 'Répondez à toutes les questions pour soumettre';
+    }
+
+    // Update item border classes
+    SECTIONS.forEach(s => {
+        if (s.has_periods) {
+            s.items.forEach(item => {
+                const card = document.getElementById('diva-item-' + item.id);
+                if (!card) return;
+                const hasAdult = !!card.querySelector(`input[name="${item.id}_adult"]:checked`);
+                const hasChild = !!card.querySelector(`input[name="${item.id}_child"]:checked`);
+                card.classList.remove('answered-full', 'answered-partial');
+                if (hasAdult && hasChild) card.classList.add('answered-full');
+                else if (hasAdult || hasChild) card.classList.add('answered-partial');
+            });
+        } else {
+            s.items.forEach(item => {
+                const card = document.getElementById('diva-item-' + item.id);
+                if (!card) return;
+                const has = !!card.querySelector(`input[name="${item.id}"]:checked`);
+                card.classList.remove('answered-full', 'answered-partial');
+                if (has) card.classList.add('answered-full');
+            });
+        }
+    });
+
+    sectionIds.forEach(id => updateSectionBadge(id));
+}
+
+/* ── Switch section ── */
+function switchSection(id) {
+    currentSection = id;
+    document.querySelectorAll('.diva-section').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.diva-tab').forEach(tab => {
+        const isActive = tab.dataset.section === id;
+        tab.classList.toggle('active', isActive);
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    const target = document.getElementById('section-' + id);
+    if (target) {
+        target.classList.add('active');
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+/* ── Tab clicks ── */
+tabsEl.addEventListener('click', e => {
+    const tab = e.target.closest('.diva-tab');
+    if (tab) switchSection(tab.dataset.section);
+});
+
+/* ── Prev/Next navigation ── */
+document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-nav]');
+    if (!btn) return;
+    const dir = btn.dataset.nav;
+    const idx = sectionIds.indexOf(currentSection);
+    if (dir === 'next' && idx < sectionIds.length - 1) switchSection(sectionIds[idx + 1]);
+    if (dir === 'prev' && idx > 0) switchSection(sectionIds[idx - 1]);
+});
+
+/* ── Radio click → update UI ── */
+document.addEventListener('change', e => {
+    if (e.target.type !== 'radio') return;
+    const group = e.target.closest('.diva-yn-group');
+    if (!group) return;
+    group.querySelectorAll('.diva-yn-btn').forEach(lbl => {
+        lbl.classList.remove('selected-oui', 'selected-non');
+    });
+    const selectedLbl = e.target.closest('.diva-yn-btn');
+    if (selectedLbl) {
+        selectedLbl.classList.add(e.target.value === 'oui' ? 'selected-oui' : 'selected-non');
+    }
+    updateUI();
+});
+
+/* ── Comment toggles ── */
+document.addEventListener('click', e => {
+    const toggle = e.target.closest('.diva-comment-toggle');
+    if (!toggle) return;
+    const targetId = toggle.dataset.target;
+    const area = document.getElementById(targetId);
+    if (area) {
+        area.classList.toggle('open');
+        if (area.classList.contains('open')) area.querySelector('textarea')?.focus();
+    }
+});
+
+/* ── Autosave ── */
+let autosaveTimer = null;
+function autosave() {
+    const answers = collectAnswers();
+    fetch(AUTOSAVE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+        body: JSON.stringify({ answers })
+    })
+    .then(r => r.json())
+    .then(() => {
+        if (autosaveEl) {
+            autosaveEl.textContent = 'Sauvegardé à ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+        }
+    })
+    .catch(() => {
+        if (autosaveEl) autosaveEl.textContent = 'Erreur de sauvegarde automatique';
+    });
+}
+if (!READ_ONLY) {
+    autosaveTimer = setInterval(autosave, 30000);
+    window.addEventListener('beforeunload', autosave);
+}
+
+/* ── Manual save button ── */
+if (saveBtn) saveBtn.addEventListener('click', () => {
+    autosave();
+    // Also post via form to trigger flash message
+    const answers = collectAnswers();
+    const fd = new FormData();
+    fd.append('_token', CSRF_TOKEN);
+    fd.append('action', 'save');
+    Object.entries(answers).forEach(([k, v]) => fd.append('answers[' + k + ']', v));
+    fetch(SUBMIT_URL, { method: 'POST', body: fd })
+        .then(() => {
+            if (autosaveEl) autosaveEl.textContent = 'Sauvegardé manuellement à ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+        });
+});
+
+/* ── Submit button ── */
+if (submitBtn) submitBtn.addEventListener('click', () => {
+    if (!confirm('Confirmer la soumission définitive ?\n\nVous ne pourrez plus modifier vos réponses après validation.')) return;
+    // Populate hidden answers inputs
+    hiddenCnt.innerHTML = '';
+    const answers = collectAnswers();
+    Object.entries(answers).forEach(([k, v]) => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'answers[' + k + ']';
+        inp.value = v;
+        hiddenCnt.appendChild(inp);
+    });
+    divaForm.submit();
+});
+
+/* ── Init ── */
+updateUI();
+
+})();
+</script>
+{% endblock %}

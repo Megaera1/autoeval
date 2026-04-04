@@ -1,0 +1,57 @@
+{
+  "formType": "enfant",
+  "title": "Anamnèse Neuropsychologique — Enfant",
+  "description": "Ce questionnaire est destiné aux parents ou représentants légaux. Merci de répondre le plus précisément possible. Toutes les informations sont strictement confidentielles.",
+  "ageRange": "4-12 ans",
+  "sections": [
+    {
+      "id": "identite",
+      "title": "Informations sur l'enfant et sa famille",
+      "fields": [
+        {"id": "nom_enfant",    "type": "text",     "label": "Nom et prénom de l'enfant",                          "description": "Nom complet tel qu'il apparaît sur les documents officiels.", "required": true},
+        {"id": "date_naissance","type": "date",     "label": "Date de naissance",                                  "description": "Jour, mois et année de naissance exacte.", "required": true},
+        {"id": "nom_parents",   "type": "text",     "label": "Nom des parents ou représentants légaux",            "description": "Noms et prénoms des personnes remplissant le questionnaire.", "required": true}
+      ]
+    },
+    {
+      "id": "motif",
+      "title": "Motif de la consultation",
+      "fields": [
+        {"id": "motif_consultation", "type": "textarea", "label": "Pourquoi consultez-vous pour un bilan neuropsychologique ?", "description": "Décrivez les difficultés ou préoccupations actuelles (concentration, apprentissage, langage, comportement, mémoire, etc.). Soyez le plus concret possible.", "required": true, "placeholder": "Ex : difficultés de concentration en classe, retard dans la lecture, crises de colère fréquentes…"}
+      ]
+    },
+    {
+      "id": "perinatal",
+      "title": "Histoire périnatale et développement précoce",
+      "fields": [
+        {"id": "grossesse",     "type": "textarea", "label": "Déroulement de la grossesse",              "description": "Y a-t-il eu des complications, infections, stress, prise de médicaments ?"},
+        {"id": "accouchement",  "type": "textarea", "label": "Accouchement et période néonatale",        "description": "Voie basse ou césarienne ? À terme ou prématuré ? Poids de naissance ? Séjour en néonatologie ?"},
+        {"id": "developpement", "type": "textarea", "label": "Développement psychomoteur et langagier",  "description": "Âge approximatif des premières acquisitions : station debout, marche, premiers mots, phrases, propreté…"}
+      ]
+    },
+    {
+      "id": "medical",
+      "title": "Antécédents médicaux",
+      "fields": [
+        {"id": "antecedents_medicaux", "type": "textarea", "label": "Maladies, hospitalisations, traumatismes, traitements en cours", "description": "Listez tous les antécédents significatifs (épilepsie, traumatisme crânien, infections ORL répétées, troubles du sommeil, etc.)."}
+      ]
+    },
+    {
+      "id": "scolaire",
+      "title": "Scolarité et comportement à l'école",
+      "fields": [
+        {"id": "niveau_scolaire",     "type": "text",     "label": "Classe et type d'établissement actuel", "description": "Ex : CE2, école primaire publique — ou CLIS, ULIS…"},
+        {"id": "difficultes_scolaires","type": "textarea","label": "Difficultés scolaires observées",        "description": "Lecture, écriture, mathématiques, attention, organisation, relations avec pairs et enseignants."}
+      ]
+    },
+    {
+      "id": "comportement",
+      "title": "Comportement et vie à la maison",
+      "fields": [
+        {"id": "comportement_maison", "type": "textarea", "label": "Comportement à la maison",          "description": "Gestion des frustrations, crises, agitation, opposition, isolement, rituels particuliers…"},
+        {"id": "sommeil_enfant",      "type": "textarea", "label": "Sommeil et alimentation",           "description": "Heure de coucher, réveils nocturnes, cauchemars, difficultés alimentaires éventuelles."},
+        {"id": "activites_loisirs",   "type": "textarea", "label": "Activités et loisirs",              "description": "Sports, activités culturelles, jeux, centres d'intérêt particuliers ou restreints."}
+      ]
+    }
+  ]
+}

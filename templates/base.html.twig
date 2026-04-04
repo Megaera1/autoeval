@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}AutoEval{% endblock %}</title>
+
+    <!-- Tabler CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
+
+    <!-- CSS personnalisé -->
+    <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+
+    {% block stylesheets %}{% endblock %}
+</head>
+<body class="{% block body_class %}antialiased{% endblock %}">
+
+    {% block navbar %}{% endblock %}
+
+    {% block page_wrapper %}
+    <div class="wrapper">
+        {% block sidebar %}{% endblock %}
+
+        <div class="page-wrapper">
+            <div class="container-xl">
+
+                {% for type, messages in app.flashes %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ type == 'error' ? 'danger' : type }} alert-dismissible mt-3">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+
+                {% block body %}{% endblock %}
+
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+    <!-- Tabler JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+    {% block javascripts %}{% endblock %}
+    {{ importmap('app') }}
+
+</body>
+</html>

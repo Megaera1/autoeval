@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ddev.exe status:*)",
+      "Bash(wsl -e bash -c \"which ddev && ddev version\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev status\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev composer require symfony/orm-pack doctrine/doctrine-migrations-bundle\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev composer require symfony/twig-bundle twig/extra-bundle symfony/asset\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev composer require symfony/security-bundle\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev composer require symfony/form symfony/validator\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev composer require symfony/mailer\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev composer require --dev symfony/maker-bundle\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev composer require symfony/asset-mapper\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev composer require --dev symfony/test-pack\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev exec php bin/console about 2>&1 | head -50\")",
+      "Read(///wsl.localhost/Ubuntu/home/cosse/autoeval/src/**)",
+      "Read(///wsl.localhost/Ubuntu/home/cosse/autoeval/**)",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev exec php bin/console make:migration\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && cat migrations/Version20260328094706.php\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev exec php bin/console doctrine:migrations:migrate --no-interaction\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev exec php bin/console doctrine:schema:validate\")",
+      "Bash(wsl -e bash -c \"cd /home/cosse/autoeval && ddev exec php bin/console cache:clear\")"
+    ]
+  }
+}

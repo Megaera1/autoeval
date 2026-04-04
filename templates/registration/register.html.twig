@@ -1,0 +1,204 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inscription — AutoEval{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block page_wrapper %}
+<div class="page page-center" style="min-height: 100vh; background-color: #f4f6fa;">
+    <div class="container container-tight py-5">
+
+        {# Messages flash #}
+        {% for type, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="alert alert-{{ type == 'error' ? 'danger' : type }} alert-dismissible mb-3">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        <div class="card shadow-sm" style="border-radius: 12px; max-width: 520px; margin: 0 auto;">
+
+            {# En-tête #}
+            <div class="card-body text-center pt-5 pb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brain mb-3" width="52" height="52" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c7be5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M15.5 13a3.5 3.5 0 0 0 -3.5 3.5v1a3.5 3.5 0 0 0 7 0v-1.8"/>
+                    <path d="M8.5 13a3.5 3.5 0 0 1 3.5 3.5v1a3.5 3.5 0 0 1 -7 0v-1.8"/>
+                    <path d="M17.5 16a3.5 3.5 0 0 0 0 -7h-.5"/>
+                    <path d="M19 9.3v-2.8a3.5 3.5 0 0 0 -7 0"/>
+                    <path d="M6.5 16a3.5 3.5 0 0 1 0 -7h.5"/>
+                    <path d="M5 9.3v-2.8a3.5 3.5 0 0 1 7 0v10"/>
+                </svg>
+                <h1 class="h2 fw-bold mb-1" style="color: #2c7be5;">AutoEval</h1>
+                <p class="text-muted mb-0">Créer votre espace patient</p>
+            </div>
+
+            <div class="card-body">
+                {{ form_start(registrationForm, {'attr': {'autocomplete': 'on', 'novalidate': 'novalidate'}}) }}
+
+                    {# Ligne 1 : Prénom / Nom #}
+                    <div class="row">
+                        <div class="col-12 col-sm-6 mb-3">
+                            <label class="form-label" for="{{ registrationForm.firstName.vars.id }}">
+                                {{ registrationForm.firstName.vars.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+                                    </svg>
+                                </span>
+                                {{ form_widget(registrationForm.firstName, {'attr': {'class': 'form-control', 'placeholder': 'Prénom'}}) }}
+                            </div>
+                            {{ form_errors(registrationForm.firstName) }}
+                        </div>
+                        <div class="col-12 col-sm-6 mb-3">
+                            <label class="form-label" for="{{ registrationForm.lastName.vars.id }}">
+                                {{ registrationForm.lastName.vars.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                        <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+                                    </svg>
+                                </span>
+                                {{ form_widget(registrationForm.lastName, {'attr': {'class': 'form-control', 'placeholder': 'Nom'}}) }}
+                            </div>
+                            {{ form_errors(registrationForm.lastName) }}
+                        </div>
+                    </div>
+
+                    {# Ligne 2 : Date de naissance / Sexe #}
+                    <div class="row">
+                        <div class="col-12 col-sm-6 mb-3">
+                            <label class="form-label" for="{{ registrationForm.birthDate.vars.id }}">
+                                {{ registrationForm.birthDate.vars.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <rect x="4" y="5" width="16" height="16" rx="2"/>
+                                        <line x1="16" y1="3" x2="16" y2="7"/>
+                                        <line x1="8" y1="3" x2="8" y2="7"/>
+                                        <line x1="4" y1="11" x2="20" y2="11"/>
+                                    </svg>
+                                </span>
+                                {{ form_widget(registrationForm.birthDate, {'attr': {'class': 'form-control'}}) }}
+                            </div>
+                            {{ form_errors(registrationForm.birthDate) }}
+                        </div>
+                        <div class="col-12 col-sm-6 mb-3">
+                            <label class="form-label" for="{{ registrationForm.gender.vars.id }}">
+                                {{ registrationForm.gender.vars.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-gender-bigender" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <circle cx="11" cy="14" r="4"/>
+                                        <path d="M19 3l-5 5"/>
+                                        <path d="M15 3h4v4"/>
+                                        <path d="M11 10v-3"/>
+                                        <path d="M18 10a4 4 0 0 1 -4.93 3.88"/>
+                                    </svg>
+                                </span>
+                                {{ form_widget(registrationForm.gender, {'attr': {'class': 'form-select'}}) }}
+                            </div>
+                            {{ form_errors(registrationForm.gender) }}
+                        </div>
+                    </div>
+
+                    {# Ligne 3 : Email #}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ registrationForm.email.vars.id }}">
+                            {{ registrationForm.email.vars.label }}
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-mail" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <rect x="3" y="5" width="18" height="14" rx="2"/>
+                                    <polyline points="3 7 12 13 21 7"/>
+                                </svg>
+                            </span>
+                            {{ form_widget(registrationForm.email, {'attr': {'class': 'form-control', 'placeholder': 'votre@email.fr'}}) }}
+                        </div>
+                        {{ form_errors(registrationForm.email) }}
+                    </div>
+
+                    {# Ligne 4 : Mot de passe #}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ registrationForm.plainPassword.first.vars.id }}">
+                            {{ registrationForm.plainPassword.first.vars.label }}
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-lock" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <rect x="5" y="11" width="14" height="10" rx="2"/>
+                                    <circle cx="12" cy="16" r="1"/>
+                                    <path d="M8 11v-4a4 4 0 0 1 8 0v4"/>
+                                </svg>
+                            </span>
+                            {{ form_widget(registrationForm.plainPassword.first, {'attr': {'class': 'form-control', 'placeholder': '••••••••'}}) }}
+                        </div>
+                        <div class="form-text text-muted">8 caractères minimum</div>
+                        {{ form_errors(registrationForm.plainPassword.first) }}
+                    </div>
+
+                    {# Ligne 5 : Confirmation mot de passe #}
+                    <div class="mb-4">
+                        <label class="form-label" for="{{ registrationForm.plainPassword.second.vars.id }}">
+                            {{ registrationForm.plainPassword.second.vars.label }}
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-lock-check" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M11.5 21h-4.5a2 2 0 0 1 -2 -2v-6a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v.5"/>
+                                    <path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0"/>
+                                    <path d="M8 11v-4a4 4 0 1 1 8 0v4"/>
+                                    <path d="M15 19l2 2l4 -4"/>
+                                </svg>
+                            </span>
+                            {{ form_widget(registrationForm.plainPassword.second, {'attr': {'class': 'form-control', 'placeholder': '••••••••'}}) }}
+                        </div>
+                        {{ form_errors(registrationForm.plainPassword.second) }}
+                        {{ form_errors(registrationForm.plainPassword) }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user-plus me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/>
+                            <path d="M16 11h6m-3 -3v6"/>
+                        </svg>
+                        Créer mon compte
+                    </button>
+
+                    <div class="text-center">
+                        <a href="{{ path('app_login') }}" class="text-muted small">
+                            Déjà un compte ? <span class="text-primary">Se connecter</span>
+                        </a>
+                    </div>
+
+                {{ form_end(registrationForm) }}
+            </div>
+
+        </div>
+
+        <p class="text-center text-muted small mt-4">
+            AutoEval &copy; 2025 — Usage clinique exclusif
+        </p>
+
+    </div>
+</div>
+{% endblock %}

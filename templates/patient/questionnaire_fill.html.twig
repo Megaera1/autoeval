@@ -1,0 +1,1252 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ questionnaire.title }} — AutoEval{% endblock %}
+
+{% block navbar %}
+<header class="navbar navbar-expand-md navbar-dark bg-blue-lt d-print-none">
+    <div class="container-xl">
+        <a href="{{ path('app_home') }}" class="navbar-brand navbar-brand-autodark">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brain me-2" width="28" height="28" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M15.5 13a3.5 3.5 0 0 0 -3.5 3.5v1a3.5 3.5 0 0 0 7 0v-1.8"/>
+                <path d="M8.5 13a3.5 3.5 0 0 1 3.5 3.5v1a3.5 3.5 0 0 1 -7 0v-1.8"/>
+                <path d="M17.5 16a3.5 3.5 0 0 0 0 -7h-.5"/>
+                <path d="M19 9.3v-2.8a3.5 3.5 0 0 0 -7 0"/>
+                <path d="M6.5 16a3.5 3.5 0 0 1 0 -7h.5"/>
+                <path d="M5 9.3v-2.8a3.5 3.5 0 0 1 7 0v10"/>
+            </svg>
+            <strong>AutoEval</strong>
+        </a>
+        <div class="navbar-nav ms-auto d-flex align-items-center gap-3">
+            <span class="text-white">{{ app.user.firstName }}</span>
+            <a href="{{ path('app_logout') }}" class="btn btn-outline-light btn-sm">Déconnexion</a>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+/* ── QuestionnairePlayer — styles communs ── */
+.qp-item { transition: box-shadow .15s; }
+.qp-item.answered { border-left: 4px solid #2c7be5; }
+.qp-badge-echelle { font-size:.65rem; letter-spacing:.06em; text-transform:uppercase; font-weight:700; padding:2px 8px; border-radius:20px; }
+.qp-badge-anxiete   { background:#fff3cd; color:#856404; }
+.qp-badge-depression{ background:#d1e7dd; color:#0a3622; }
+
+/* Options standard (HAD) */
+.qp-option { display:flex; align-items:center; gap:.75rem; padding:.65rem 1rem; border:1.5px solid #e6e7e9; border-radius:8px; cursor:pointer; transition:background .12s,border-color .12s; margin-bottom:.5rem; }
+.qp-option:hover { background:#f0f4ff; border-color:#2c7be5; }
+.qp-option.selected { background:#eaf1fd; border-color:#2c7be5; font-weight:600; }
+.qp-option input[type=radio] { accent-color:#2c7be5; width:1.1em; height:1.1em; flex-shrink:0; }
+
+/* Score panel */
+.qp-score-panel { position:sticky; bottom:0; z-index:100; background:#fff; border-top:1px solid #e6e7e9; box-shadow:0 -2px 12px rgba(0,0,0,.08); padding:.75rem 0; }
+.qp-threshold-badge { font-size:.8rem; border-radius:6px; padding:2px 10px; font-weight:600; }
+.qp-threshold-normal  { background:#d1e7dd; color:#0a3622; }
+.qp-threshold-douteux { background:#fff3cd; color:#664d03; }
+.qp-threshold-certain { background:#f8d7da; color:#58151c; }
+
+/* APMT buttons (child + teacher) */
+.qp-apmt-btn {
+    display: flex; align-items: center; gap: 1rem;
+    padding: .75rem 1.1rem;
+    border: 2px solid #dee2e6; border-radius: 10px;
+    cursor: pointer; font-size: .95rem;
+    background: #fff; width: 100%; text-align: left;
+    transition: background .12s, border-color .12s;
+    margin-bottom: .45rem;
+    position: relative;
+}
+.qp-apmt-btn:hover  { background: #f0f6ff; border-color: #2c7be5; }
+.qp-apmt-btn.selected { background: #dbeafe; border-color: #2c7be5; font-weight: 600; }
+.qp-apmt-code {
+    width: 2rem; height: 2rem; border-radius: 50%;
+    background: #e9ecef; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1rem; flex-shrink: 0; color: #495057;
+    transition: background .12s, color .12s;
+}
+.qp-apmt-btn.selected .qp-apmt-code { background: #2c7be5; color: #fff; }
+
+/* Page visibility (child mode) */
+.qp-page { display: none; }
+.qp-page.active { display: block; }
+
+/* Global progress bar */
+.qp-global-progress { height: 6px; background: #e9ecef; border-radius: 3px; overflow: hidden; }
+.qp-global-progress-bar { height: 100%; background: #2c7be5; transition: width .3s; }
+
+/* ── Child mode overrides ── */
+.qp-child .qp-item .card-body { padding: 1.25rem 1.5rem; }
+.qp-child .qp-item-question { font-size: 1.1rem; line-height: 1.65; font-weight: 600; margin-bottom: 1rem; }
+
+/* ── Teacher mode overrides ── */
+.qp-teacher .qp-item.answered { border-left: 4px solid #4A9A9A; }
+.qp-teacher .qp-apmt-btn:hover { background: #f0fafa; border-color: #4A9A9A; }
+.qp-teacher .qp-apmt-btn.selected { background: #e0f2f1; border-color: #4A9A9A; }
+.qp-teacher .qp-apmt-btn.selected .qp-apmt-code { background: #4A9A9A; color: #fff; }
+
+/* ── Parent mode overrides ── */
+.qp-parent .qp-item.answered { border-left: 4px solid #1a6fa8; }
+.qp-parent .qp-apmt-btn:hover { background: #f0f6ff; border-color: #1a6fa8; }
+.qp-parent .qp-apmt-btn.selected { background: #dbeafe; border-color: #1a6fa8; }
+.qp-parent .qp-apmt-btn.selected .qp-apmt-code { background: #1a6fa8; color: #fff; }
+
+/* ── Adolescent mode overrides ── */
+.qp-ado .qp-item.answered { border-left: 4px solid #4a9b8f; }
+.qp-ado .qp-apmt-btn:hover { background: #f0fafa; border-color: #4a9b8f; }
+.qp-ado .qp-apmt-btn.selected { background: #e0f2f0; border-color: #4a9b8f; font-weight: 600; }
+.qp-ado .qp-apmt-btn.selected .qp-apmt-code { background: #4a9b8f; color: #fff; }
+.ado-consigne { border-left: 4px solid #4a9b8f; background: #f0fafa; }
+
+/* Read-only mode */
+.qp-readonly { pointer-events: none; opacity: .82; user-select: text; }
+.ado-legend-badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: .82rem; font-weight: 600; color: #fff;
+}
+
+/* Parent header card accent */
+.parent-header-card .card-header { background: #1a6fa8; color: #fff; }
+.parent-consigne { border-left: 4px solid #1a6fa8; background: #f0f6ff; }
+.parent-legend-badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: .82rem; font-weight: 600; color: #fff;
+}
+#meta_lien_autre_wrap { display: none; }
+
+.qp-cluster-header {
+    background: #4A9A9A; color: #fff;
+    padding: .55rem 1rem; border-radius: 6px;
+    font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; font-size: .82rem;
+    margin: 1.5rem 0 .75rem;
+}
+.qp-cluster-header:first-child { margin-top: 0; }
+
+/* Teacher header card accent */
+.teacher-header-card .card-header { background: #4A9A9A; color: #fff; }
+.teacher-consigne { border-left: 4px solid #4A9A9A; background: #f0fafa; }
+.teacher-legend-badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: .82rem; font-weight: 600; color: #fff;
+}
+</style>
+{% endblock %}
+
+{% block body %}
+{% set isRich = questionnaire.questions.items is defined %}
+{% set isChildMode = isRich and questionnaire.questions.child_mode is defined and questionnaire.questions.child_mode %}
+{% set isTeacherMode = isRich and questionnaire.questions.teacher_mode is defined and questionnaire.questions.teacher_mode %}
+{% set isParentMode = isRich and questionnaire.questions.parent_mode is defined and questionnaire.questions.parent_mode %}
+{% set isAdolescentMode = isRich and questionnaire.questions.adolescent_mode is defined and questionnaire.questions.adolescent_mode %}
+{% set hasInfoFields = isRich and questionnaire.questions.info_fields is defined %}
+
+{# Breadcrumb #}
+<div class="page-header mt-3">
+    <div class="row align-items-center">
+        <div class="col">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ path('app_patient_questionnaires') }}">Mes questionnaires</a></li>
+                <li class="breadcrumb-item active">{{ questionnaire.title }}</li>
+            </ol>
+            <h2 class="page-title mt-1">{{ questionnaire.title }}</h2>
+            <div class="d-flex align-items-center gap-3 flex-wrap mt-1">
+                {% if questionnaire.questions.auteurs is defined %}
+                    <span class="text-muted small">{{ questionnaire.questions.auteurs }}
+                        {% if questionnaire.questions.editeur is defined %} — {{ questionnaire.questions.editeur }}{% endif %}
+                        {% if questionnaire.questions.tranche_age is defined %} — {{ questionnaire.questions.tranche_age }}{% endif %}
+                    </span>
+                {% endif %}
+                {% set ageAtStart = response.patientAgeAtStart %}
+                {% if ageAtStart is not null %}
+                    <span class="badge bg-blue-lt text-blue" title="Âge au moment de la passation">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user me-1" width="14" height="14" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/></svg>
+                        {{ ageAtStart }} ans
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ═══════════════════════════════════════════════════
+   TEACHER MODE — En-tête + consigne (hors <form>)
+   ═══════════════════════════════════════════════════ #}
+{% if isTeacherMode %}
+
+<div class="card mb-4 teacher-header-card border-0 shadow-sm">
+    <div class="card-header fw-bold">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clipboard-text me-2" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
+        Informations sur l'évaluation
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {# Évaluateur #}
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="meta_evaluateur">Nom de l'évaluateur <span class="text-danger">*</span></label>
+                <input type="text" id="meta_evaluateur" class="form-control teacher-meta-required"
+                       form="questionnaire-form"
+                       name="answers[_meta_evaluateur]"
+                       value="{{ response.answers['_meta_evaluateur'] ?? '' }}"
+                       aria-label="Nom de l'évaluateur (enseignant)" aria-required="true"
+                       autocomplete="off">
+            </div>
+
+            {# Durée de connaissance #}
+            <div class="col-md-6">
+                <label class="form-label fw-semibold d-block">Depuis combien de temps connaissez-vous cet élève ? <span class="text-danger">*</span></label>
+                {% set curDuree = response.answers['_meta_duree_connaissance'] ?? '' %}
+                <div class="d-flex flex-wrap gap-3 mt-1">
+                    {% for durVal, durLabel in {
+                        'moins_1_mois': "Moins d'un mois",
+                        '1_2_mois': '1 à 2 mois',
+                        '3_5_mois': '3 à 5 mois',
+                        '6_11_mois': '6 à 11 mois',
+                        '12_mois_plus': '12 mois ou plus'
+                    } %}
+                    <label class="form-check">
+                        <input class="form-check-input teacher-meta-required" type="radio"
+                               form="questionnaire-form"
+                               name="answers[_meta_duree_connaissance]"
+                               value="{{ durVal }}"
+                               {{ curDuree == durVal ? 'checked' : '' }}
+                               aria-label="{{ durLabel }}">
+                        <span class="form-check-label">{{ durLabel }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Consigne #}
+<div class="card mb-4 border-0 teacher-consigne">
+    <div class="card-body">
+        <p class="mb-3" style="font-size:.95rem; line-height:1.65;">{{ questionnaire.description }}</p>
+        <div class="d-flex flex-wrap gap-2">
+            <span class="teacher-legend-badge" style="background:#4A9A9A;">A = Aucun problème</span>
+            <span class="teacher-legend-badge" style="background:#3d8888;">P = Peu important</span>
+            <span class="teacher-legend-badge" style="background:#2d7070;">M = Moyennement important</span>
+            <span class="teacher-legend-badge" style="background:#1d5858;">T = Très important</span>
+        </div>
+    </div>
+</div>
+
+{# Progress bar (teacher) #}
+<div class="d-flex align-items-center gap-3 mb-4">
+    <div class="qp-global-progress flex-grow-1">
+        <div class="qp-global-progress-bar" id="qp-global-bar" style="width:0%; background:#4A9A9A;"></div>
+    </div>
+    <span class="text-muted small fw-bold" id="qp-teacher-progress-label">0 / {{ questionnaire.questions.items|length }} réponses</span>
+</div>
+
+{% elseif isParentMode %}
+
+{# ═══════════════════════════════════════════════════
+   PARENT MODE — En-tête + consigne (hors <form>)
+   ═══════════════════════════════════════════════════ #}
+<div class="card mb-4 parent-header-card border-0 shadow-sm">
+    <div class="card-header fw-bold">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-users me-2" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/></svg>
+        Informations sur l'évaluation
+    </div>
+    <div class="card-body">
+        {% if hasInfoFields %}
+        {# ── Champs définis dans le JSON (info_fields) ── #}
+        <div class="row g-3">
+            {% for field in questionnaire.questions.info_fields %}
+            <div class="col-md-4">
+                <label class="form-label fw-semibold" for="info_field_{{ field.id }}">
+                    {{ field.label }}
+                    {% if field.required is defined and field.required %}<span class="text-danger"> *</span>{% endif %}
+                </label>
+                <input type="{{ field.type }}"
+                       id="info_field_{{ field.id }}"
+                       class="form-control{% if field.required is defined and field.required %} parent-meta-required{% endif %}"
+                       form="questionnaire-form"
+                       name="answers[{{ field.id }}]"
+                       value="{{ response.answers[field.id] ?? '' }}"
+                       {% if field.placeholder is defined and field.placeholder is not empty %}placeholder="{{ field.placeholder }}"{% endif %}
+                       autocomplete="off">
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        {# ── Champs legacy (parent_mode sans info_fields) ── #}
+        <div class="row g-3">
+            {# Nom/Prénom du parent évaluateur #}
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="meta_evaluateur_prenom">Prénom du parent évaluateur <span class="text-danger">*</span></label>
+                <input type="text" id="meta_evaluateur_prenom" class="form-control parent-meta-required"
+                       form="questionnaire-form" name="answers[_meta_evaluateur_prenom]"
+                       value="{{ response.answers['_meta_evaluateur_prenom'] ?? '' }}"
+                       aria-required="true" autocomplete="off">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="meta_evaluateur_nom">Nom du parent évaluateur <span class="text-danger">*</span></label>
+                <input type="text" id="meta_evaluateur_nom" class="form-control parent-meta-required"
+                       form="questionnaire-form" name="answers[_meta_evaluateur_nom]"
+                       value="{{ response.answers['_meta_evaluateur_nom'] ?? '' }}"
+                       aria-required="true" autocomplete="off">
+            </div>
+
+            {# Nom du praticien #}
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="meta_praticien">Nom du praticien</label>
+                <input type="text" id="meta_praticien" class="form-control"
+                       form="questionnaire-form" name="answers[_meta_praticien]"
+                       value="{{ response.answers['_meta_praticien'] ?? '' }}"
+                       autocomplete="off">
+            </div>
+
+            {# Lien avec l'enfant #}
+            <div class="col-md-6">
+                <label class="form-label fw-semibold d-block">Lien avec l'enfant <span class="text-danger">*</span></label>
+                {% set curLien = response.answers['_meta_lien'] ?? '' %}
+                <div class="d-flex flex-wrap gap-3 mt-1">
+                    {% for lienVal, lienLabel in {'mere': 'Mère', 'pere': 'Père', 'tuteur': 'Tuteur/Tutrice', 'autre': 'Autre'} %}
+                    <label class="form-check">
+                        <input class="form-check-input parent-meta-required" type="radio"
+                               form="questionnaire-form" name="answers[_meta_lien]"
+                               value="{{ lienVal }}" {{ curLien == lienVal ? 'checked' : '' }}
+                               id="meta_lien_{{ lienVal }}"
+                               aria-label="{{ lienLabel }}">
+                        <span class="form-check-label">{{ lienLabel }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <div id="meta_lien_autre_wrap" class="mt-2">
+                    <input type="text" class="form-control form-control-sm"
+                           form="questionnaire-form" name="answers[_meta_lien_autre]"
+                           value="{{ response.answers['_meta_lien_autre'] ?? '' }}"
+                           placeholder="Précisez..." id="meta_lien_autre">
+                </div>
+            </div>
+
+            {# Nom/Prénom de l'enfant #}
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="meta_enfant_prenom">Prénom de l'enfant <span class="text-danger">*</span></label>
+                <input type="text" id="meta_enfant_prenom" class="form-control parent-meta-required"
+                       form="questionnaire-form" name="answers[_meta_enfant_prenom]"
+                       value="{{ response.answers['_meta_enfant_prenom'] ?? '' }}"
+                       aria-required="true" autocomplete="off">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="meta_enfant_nom">Nom de l'enfant <span class="text-danger">*</span></label>
+                <input type="text" id="meta_enfant_nom" class="form-control parent-meta-required"
+                       form="questionnaire-form" name="answers[_meta_enfant_nom]"
+                       value="{{ response.answers['_meta_enfant_nom'] ?? '' }}"
+                       aria-required="true" autocomplete="off">
+            </div>
+
+            {# Classe + Raisons #}
+            <div class="col-md-4">
+                <label class="form-label fw-semibold" for="meta_classe">Classe</label>
+                <input type="text" id="meta_classe" class="form-control"
+                       form="questionnaire-form" name="answers[_meta_classe]"
+                       value="{{ response.answers['_meta_classe'] ?? '' }}"
+                       autocomplete="off">
+            </div>
+            <div class="col-md-8">
+                <label class="form-label fw-semibold" for="meta_raisons">Raisons de l'évaluation</label>
+                <input type="text" id="meta_raisons" class="form-control"
+                       form="questionnaire-form" name="answers[_meta_raisons]"
+                       value="{{ response.answers['_meta_raisons'] ?? '' }}"
+                       autocomplete="off">
+            </div>
+
+            {# Dates #}
+            <div class="col-md-4">
+                <label class="form-label fw-semibold" for="meta_date_admin">Date d'administration</label>
+                <input type="date" id="meta_date_admin" class="form-control"
+                       form="questionnaire-form" name="answers[_meta_date_admin]"
+                       value="{{ response.answers['_meta_date_admin'] ?? '' }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold" for="meta_date_naissance">Date de naissance de l'enfant</label>
+                <input type="date" id="meta_date_naissance" class="form-control"
+                       form="questionnaire-form" name="answers[_meta_date_naissance]"
+                       value="{{ response.answers['_meta_date_naissance'] ?? '' }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold d-block">Âge (calculé automatiquement)</label>
+                <div class="form-control-plaintext fw-bold text-primary" id="meta_age_display" style="min-height:2.2rem;">—</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# Consigne parent #}
+<div class="card mb-4 border-0 parent-consigne">
+    <div class="card-body">
+        <p class="mb-3" style="font-size:.95rem; line-height:1.65;">{{ questionnaire.description }}</p>
+        <div class="d-flex flex-wrap gap-2">
+            <span class="parent-legend-badge" style="background:#1a6fa8;">A = Aucun problème</span>
+            <span class="parent-legend-badge" style="background:#1560a0;">P = Peu important</span>
+            <span class="parent-legend-badge" style="background:#0d4d8a;">M = Moyennement important</span>
+            <span class="parent-legend-badge" style="background:#063a73;">T = Très important</span>
+        </div>
+    </div>
+</div>
+
+{# Progress bar (parent) #}
+<div class="d-flex align-items-center gap-3 mb-4">
+    <div class="qp-global-progress flex-grow-1">
+        <div class="qp-global-progress-bar" id="qp-global-bar" style="width:0%; background:#1a6fa8;"></div>
+    </div>
+    <span class="text-muted small fw-bold" id="qp-parent-progress-label">0 / {{ questionnaire.questions.items|length }} réponses</span>
+</div>
+
+{% elseif isAdolescentMode %}
+
+{# ═══════════════════════════════════════════════════
+   ADOLESCENT MODE — Consigne (auto-questionnaire)
+   ═══════════════════════════════════════════════════ #}
+<div class="card mb-4 border-0 ado-consigne">
+    <div class="card-body">
+        <p class="mb-3" style="font-size:.95rem; line-height:1.65;">{{ questionnaire.description }}</p>
+        <div class="d-flex flex-wrap gap-2">
+            <span class="ado-legend-badge" style="background:#4a9b8f;">A = Aucun problème</span>
+            <span class="ado-legend-badge" style="background:#3d8a7f;">P = Peu important</span>
+            <span class="ado-legend-badge" style="background:#2d7068;">M = Moyennement important</span>
+            <span class="ado-legend-badge" style="background:#1e5550;">T = Très important</span>
+        </div>
+    </div>
+</div>
+
+{# Progress bar (adolescent) #}
+<div class="d-flex align-items-center gap-3 mb-4">
+    <div class="qp-global-progress flex-grow-1">
+        <div class="qp-global-progress-bar" id="qp-global-bar" style="width:0%; background:#4a9b8f;"></div>
+    </div>
+    <span class="text-muted small fw-bold" id="qp-ado-progress-label">0 / {{ questionnaire.questions.items|length }} réponses</span>
+</div>
+
+{% else %}
+
+{# ── Standard / child: description alert ── #}
+{% if questionnaire.description %}
+    <div class="alert alert-info mb-4" style="font-size:{% if isChildMode %}1.05rem{% else %}inherit{% endif %};">
+        {{ questionnaire.description }}
+    </div>
+{% endif %}
+
+{# Progress bar (child mode) #}
+{% if isChildMode %}
+    <div class="qp-global-progress mb-3">
+        <div class="qp-global-progress-bar" id="qp-global-bar" style="width:0%"></div>
+    </div>
+{% endif %}
+
+{% endif %}{# end isTeacherMode #}
+
+{% if readOnly %}
+<div class="alert alert-secondary d-flex align-items-center gap-2 mb-4" role="alert">
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-eye flex-shrink-0" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="2"/><path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7"/></svg>
+    <span>Consultation en lecture seule — passation du {{ response.completedAt ? response.completedAt|date('d/m/Y') : response.startedAt|date('d/m/Y') }}
+    {% if response.score is not null %} · Score : <strong>{{ response.score }}</strong>{% endif %}</span>
+    <a href="{{ path('app_patient_questionnaires') }}" class="btn btn-sm btn-outline-secondary ms-auto">← Retour</a>
+</div>
+{% endif %}
+
+<form method="post"
+      id="questionnaire-form"
+      action="{{ path('app_patient_questionnaire_fill', {slug: questionnaire.slug, responseId: response.id}) }}">
+    <input type="hidden" name="_token" value="{{ csrf_token('questionnaire_fill') }}">
+
+    {% if isRich %}
+        <div id="qp-root"
+             class="{{ isChildMode ? 'qp-child' : (isTeacherMode ? 'qp-teacher' : (isParentMode ? 'qp-parent' : (isAdolescentMode ? 'qp-ado' : ''))) }}{% if readOnly %} qp-readonly{% endif %}"
+             data-questionnaire="{{ questionnaire.questions|json_encode }}"
+             data-answers="{{ response.answers|json_encode }}"
+             {% if readOnly %}data-readonly="1"{% endif %}>
+            <div class="text-center text-muted py-5">Chargement…</div>
+        </div>
+
+    {% else %}
+        {% for index, question in questionnaire.questions %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <p class="fw-bold mb-3">{{ loop.index }}. {{ question.label|default('Question ' ~ loop.index) }}</p>
+                    {% set cur = response.answers[index ~ ''] is defined ? response.answers[index ~ ''] : '' %}
+
+                    {% if question.type|default('text') == 'text' %}
+                        <textarea name="answers[{{ index }}]" class="form-control" rows="3">{{ cur }}</textarea>
+
+                    {% elseif question.type == 'scale' %}
+                        {% for i in (question.min|default(0))..(question.max|default(4)) %}
+                            <label class="qp-option {{ cur == (i ~ '') ? 'selected' : '' }}">
+                                <input type="radio" name="answers[{{ index }}]" value="{{ i }}" {{ cur == (i ~ '') ? 'checked' : '' }}>
+                                {{ i }}{% if question.labels is defined and question.labels[i ~ ''] is defined %} — {{ question.labels[i ~ ''] }}{% endif %}
+                            </label>
+                        {% endfor %}
+
+                    {% elseif question.type in ['choice', 'checkbox'] %}
+                        {% for choiceValue, choiceLabel in question.choices|default({}) %}
+                            <label class="qp-option {{ cur == choiceValue ? 'selected' : '' }}">
+                                <input type="{{ question.type == 'checkbox' ? 'checkbox' : 'radio' }}"
+                                       name="answers[{{ index }}]{{ question.type == 'checkbox' ? '[]' : '' }}"
+                                       value="{{ choiceValue }}"
+                                       {{ cur == choiceValue ? 'checked' : '' }}>
+                                {{ choiceLabel }}
+                            </label>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div style="height: 90px;"></div>
+</form>
+
+{# ── Sticky bottom bar ── #}
+<div class="qp-score-panel" id="qp-score-panel">
+    <div class="container-xl">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+
+            {% if readOnly %}
+                <span class="text-muted small">Mode lecture seule</span>
+                <a href="{{ path('app_patient_questionnaires') }}" class="btn btn-outline-secondary">← Retour aux questionnaires</a>
+
+            {% elseif isTeacherMode %}
+                <div class="d-flex align-items-center gap-2">
+                    <span id="qp-teacher-status" class="text-muted small"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" form="questionnaire-form" name="action" value="save"
+                            class="btn btn-outline-secondary">
+                        Enregistrer et continuer plus tard
+                    </button>
+                    <button type="submit" form="questionnaire-form" name="action" value="complete"
+                            id="qp-btn-complete" class="btn btn-primary" disabled
+                            style="background:#4A9A9A; border-color:#4A9A9A;"
+                            title="Remplissez tous les items et les champs obligatoires pour soumettre">
+                        ✓ Soumettre
+                    </button>
+                </div>
+
+            {% elseif isParentMode %}
+                <div class="d-flex align-items-center gap-2">
+                    <span id="qp-parent-status" class="text-muted small"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" form="questionnaire-form" name="action" value="save"
+                            class="btn btn-outline-secondary">
+                        Enregistrer et continuer plus tard
+                    </button>
+                    <button type="submit" form="questionnaire-form" name="action" value="complete"
+                            id="qp-btn-complete" class="btn btn-primary" disabled
+                            style="background:#1a6fa8; border-color:#1a6fa8;"
+                            title="Remplissez tous les items et les champs obligatoires pour soumettre">
+                        ✓ Soumettre
+                    </button>
+                </div>
+
+            {% elseif isAdolescentMode %}
+                <div class="d-flex align-items-center gap-2">
+                    <span id="qp-ado-status" class="text-muted small"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" form="questionnaire-form" name="action" value="save"
+                            class="btn btn-outline-secondary">
+                        Enregistrer et continuer plus tard
+                    </button>
+                    <button type="submit" form="questionnaire-form" name="action" value="complete"
+                            id="qp-btn-complete" class="btn btn-primary" disabled
+                            style="background:#4a9b8f; border-color:#4a9b8f;"
+                            title="Réponds à tous les items pour soumettre">
+                        ✓ Soumettre
+                    </button>
+                </div>
+
+            {% elseif isChildMode %}
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button type="button" id="qp-prev-btn" class="btn btn-outline-secondary btn-sm" disabled>
+                        ← Précédent
+                    </button>
+                    <span id="qp-page-indicator" class="text-muted small fw-bold">Page 1 / 6</span>
+                    <button type="button" id="qp-next-btn" class="btn btn-outline-primary btn-sm">
+                        Suivant →
+                    </button>
+                    <span class="text-muted small ms-2">
+                        <span id="qp-answered-count">0</span> / {{ questionnaire.questions.items|length }} répondu(s)
+                    </span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" form="questionnaire-form" name="action" value="save" class="btn btn-outline-primary">
+                        Sauvegarder
+                    </button>
+                    <button type="submit" form="questionnaire-form" name="action" value="complete"
+                            id="qp-btn-complete" class="btn btn-primary" style="display:none;">
+                        ✓ Terminer le questionnaire
+                    </button>
+                </div>
+
+            {% else %}
+                <div id="qp-scores-display" class="d-flex gap-3 flex-wrap">
+                    {% if isRich %}
+                        {% for se in questionnaire.questions.sous_echelles %}
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="qp-badge-echelle qp-badge-{{ se.id }}">{{ se.label }}</span>
+                                <strong id="qp-score-{{ se.id }}">0</strong>
+                                <span class="text-muted small">/ {{ se.score_max }}</span>
+                                <span id="qp-threshold-{{ se.id }}" class="qp-threshold-badge"></span>
+                            </div>
+                        {% endfor %}
+                        <div class="d-flex align-items-center gap-1 text-muted small">
+                            <span id="qp-answered-count">0</span>/{{ questionnaire.questions.items|length }} répondu(s)
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" form="questionnaire-form" name="action" value="save" class="btn btn-outline-primary">
+                        Sauvegarder
+                    </button>
+                    <button type="submit" form="questionnaire-form" name="action" value="complete"
+                            id="qp-btn-complete" class="btn btn-primary">
+                        ✓ Terminer
+                    </button>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{% if questionnaire.questions.items is defined %}
+<script>
+(function () {
+'use strict';
+
+const ROOT     = document.getElementById('qp-root');
+if (!ROOT) return;
+const DATA     = JSON.parse(ROOT.dataset.questionnaire);
+const EXISTING = JSON.parse(ROOT.dataset.answers || '{}');
+const FORM     = document.getElementById('questionnaire-form');
+const ITEMS    = [...DATA.items].sort((a, b) => a.ordre_affichage - b.ordre_affichage);
+
+function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ════════════════════════════════════════════
+   TEACHER MODE PLAYER (Brown ENS + teacher_mode)
+   ════════════════════════════════════════════ */
+function initTeacherPlayer() {
+    ROOT.innerHTML = '';
+
+    /* Items in strict numerical order */
+    ITEMS.forEach(item => {
+        const existingVal = EXISTING[item.id] !== undefined ? String(EXISTING[item.id]) : null;
+
+        const card = document.createElement('div');
+        card.className = 'card mb-3 qp-item' + (existingVal !== null ? ' answered' : '');
+        card.id = 'qp-card-' + item.id;
+
+        const btnsHtml = item.options.map(opt => {
+            const sel = existingVal === String(opt.valeur) ? ' selected' : '';
+            return `<button type="button" class="qp-apmt-btn${sel}"
+                            data-item="${escHtml(item.id)}" data-val="${opt.valeur}"
+                            aria-pressed="${existingVal === String(opt.valeur) ? 'true' : 'false'}"
+                            aria-label="${escHtml(opt.code)} — ${escHtml(opt.label)}">
+                <span class="qp-apmt-code" aria-hidden="true">${escHtml(opt.code)}</span>
+                <span class="qp-apmt-label">${escHtml(opt.label)}</span>
+                <input type="radio" name="answers[${escHtml(item.id)}]" value="${opt.valeur}"
+                       ${existingVal === String(opt.valeur) ? 'checked' : ''}
+                       style="position:absolute;opacity:0;pointer-events:none;"
+                       aria-hidden="true" tabindex="-1">
+            </button>`;
+        }).join('');
+
+        card.innerHTML = `
+            <div class="card-body py-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="text-muted fw-bold flex-shrink-0" style="min-width:2.5rem;font-size:1rem;">${item.ordre_affichage}.</span>
+                    <div class="flex-grow-1">
+                        <p class="mb-3 fw-semibold" style="font-size:1.02rem;line-height:1.6;">${escHtml(item.texte)}</p>
+                        <div class="qp-apmt-options" role="group" aria-label="Évaluation item ${item.ordre_affichage}">${btnsHtml}</div>
+                    </div>
+                </div>
+            </div>`;
+
+        ROOT.appendChild(card);
+    });
+
+    /* Event delegation: APMT button clicks */
+    ROOT.addEventListener('click', function(e) {
+        const btn = e.target.closest('.qp-apmt-btn');
+        if (!btn) return;
+
+        const optionsDiv = btn.closest('.qp-apmt-options');
+        optionsDiv.querySelectorAll('.qp-apmt-btn').forEach(b => {
+            b.classList.remove('selected');
+            b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('selected');
+        btn.setAttribute('aria-pressed', 'true');
+
+        const radio = btn.querySelector('input[type=radio]');
+        if (radio) radio.checked = true;
+
+        btn.closest('.qp-item').classList.add('answered');
+        updateTeacherUI();
+    });
+
+    /* Keyboard: Space/Enter on APMT button */
+    ROOT.addEventListener('keydown', function(e) {
+        if ((e.key === ' ' || e.key === 'Enter') && e.target.classList.contains('qp-apmt-btn')) {
+            e.preventDefault();
+            e.target.click();
+        }
+    });
+
+    /* Meta fields change */
+    document.querySelectorAll('.teacher-meta-required').forEach(el => {
+        el.addEventListener('input', updateTeacherUI);
+        el.addEventListener('change', updateTeacherUI);
+    });
+
+    updateTeacherUI();
+}
+
+function updateTeacherUI() {
+    let answered = 0;
+    ITEMS.forEach(item => {
+        FORM.querySelectorAll(`input[name="answers[${item.id}]"]`).forEach(r => {
+            if (r.checked) answered++;
+        });
+    });
+
+    const total = ITEMS.length;
+    const pct = Math.round(answered / total * 100);
+
+    const bar       = document.getElementById('qp-global-bar');
+    const progLabel = document.getElementById('qp-teacher-progress-label');
+    const statusEl  = document.getElementById('qp-teacher-status');
+    const completeBtn = document.getElementById('qp-btn-complete');
+
+    if (bar)       bar.style.width = pct + '%';
+    if (progLabel) progLabel.textContent = answered + ' / ' + total + ' réponses';
+
+    /* Check required header fields */
+    const evaluateurEl = document.querySelector('[name="answers[_meta_evaluateur]"]');
+    const dureeChecked = document.querySelector('[name="answers[_meta_duree_connaissance]"]:checked');
+    const allHeaderFilled = (evaluateurEl && evaluateurEl.value.trim() !== '') && !!dureeChecked;
+
+    const allDone = (answered === total) && allHeaderFilled;
+
+    if (statusEl) {
+        if (!allHeaderFilled) {
+            statusEl.textContent = 'Complétez les champs obligatoires de l\'en-tête.';
+        } else if (answered < total) {
+            statusEl.textContent = total - answered + ' item(s) sans réponse.';
+        } else {
+            statusEl.textContent = '✓ Prêt à soumettre';
+            statusEl.style.color = '#4A9A9A';
+        }
+    }
+
+    if (completeBtn) {
+        completeBtn.disabled = !allDone;
+        completeBtn.title = allDone ? '' : 'Remplissez tous les items et les champs obligatoires pour soumettre';
+        completeBtn.style.opacity = allDone ? '1' : '.5';
+    }
+}
+
+/* ════════════════════════════════════════════
+   CHILD MODE PLAYER (Brown ENF + child_mode)
+   ════════════════════════════════════════════ */
+function initChildPlayer() {
+    const PER_PAGE   = DATA.items_per_page || 10;
+    const TOTAL_PGS  = Math.ceil(ITEMS.length / PER_PAGE);
+    let   curPage    = 0;
+
+    const clusterLabels = {};
+    (DATA.sous_echelles || []).forEach(se => { clusterLabels[se.id] = se.label; });
+
+    ROOT.innerHTML = '';
+    for (let p = 0; p < TOTAL_PGS; p++) {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'qp-page' + (p === 0 ? ' active' : '');
+        pageDiv.id = 'qp-page-' + p;
+
+        const pageItems = ITEMS.slice(p * PER_PAGE, (p + 1) * PER_PAGE);
+        pageItems.forEach((item) => {
+            const existingVal = EXISTING[item.id] !== undefined ? String(EXISTING[item.id]) : null;
+            const card = document.createElement('div');
+            card.className = 'card mb-3 qp-item' + (existingVal !== null ? ' answered' : '');
+            card.id = 'qp-card-' + item.id;
+
+            const clusterLabel = escHtml(clusterLabels[item.sous_echelle] || item.sous_echelle || '');
+
+            const btnsHtml = item.options.map(opt => {
+                const sel = existingVal === String(opt.valeur) ? ' selected' : '';
+                return `<button type="button" class="qp-apmt-btn${sel}"
+                                data-item="${escHtml(item.id)}" data-val="${opt.valeur}"
+                                aria-pressed="${existingVal === String(opt.valeur) ? 'true' : 'false'}"
+                                aria-label="${escHtml(opt.code)} — ${escHtml(opt.label)}">
+                    <span class="qp-apmt-code" aria-hidden="true">${escHtml(opt.code)}</span>
+                    <span class="qp-apmt-label">${escHtml(opt.label)}</span>
+                    <input type="radio" name="answers[${escHtml(item.id)}]" value="${opt.valeur}"
+                           ${existingVal === String(opt.valeur) ? 'checked' : ''}
+                           style="position:absolute;opacity:0;pointer-events:none;" aria-hidden="true" tabindex="-1">
+                </button>`;
+            }).join('');
+
+            card.innerHTML = `
+                <div class="card-body">
+                    <div class="d-flex align-items-start gap-2 mb-3">
+                        <span class="text-muted fw-bold" style="min-width:2.2rem;font-size:1.1rem;">${item.ordre_affichage}.</span>
+                        <div class="flex-grow-1">
+                            <span class="badge bg-secondary-lt text-secondary mb-2" style="font-size:.65rem;">${clusterLabel}</span>
+                            <p class="qp-item-question mb-0">${escHtml(item.texte)}</p>
+                        </div>
+                    </div>
+                    <div class="qp-apmt-options ps-4">${btnsHtml}</div>
+                </div>`;
+
+            pageDiv.appendChild(card);
+        });
+        ROOT.appendChild(pageDiv);
+    }
+
+    ROOT.addEventListener('click', function(e) {
+        const btn = e.target.closest('.qp-apmt-btn');
+        if (!btn) return;
+        btn.closest('.qp-apmt-options').querySelectorAll('.qp-apmt-btn').forEach(b => {
+            b.classList.remove('selected');
+            b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('selected');
+        btn.setAttribute('aria-pressed', 'true');
+        const radio = btn.querySelector('input[type=radio]');
+        if (radio) radio.checked = true;
+        btn.closest('.qp-item').classList.add('answered');
+        updateChildUI();
+    });
+
+    const prevBtn       = document.getElementById('qp-prev-btn');
+    const nextBtn       = document.getElementById('qp-next-btn');
+    const pageIndicator = document.getElementById('qp-page-indicator');
+    const completeBtn   = document.getElementById('qp-btn-complete');
+    const globalBar     = document.getElementById('qp-global-bar');
+    const answeredEl    = document.getElementById('qp-answered-count');
+
+    function showPage(p) {
+        document.querySelectorAll('.qp-page').forEach(d => d.classList.remove('active'));
+        const pg = document.getElementById('qp-page-' + p);
+        if (pg) { pg.classList.add('active'); pg.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+        curPage = p;
+        updateChildUI();
+    }
+
+    prevBtn && prevBtn.addEventListener('click', () => { if (curPage > 0) showPage(curPage - 1); });
+    nextBtn && nextBtn.addEventListener('click', () => { if (curPage < TOTAL_PGS - 1) showPage(curPage + 1); });
+
+    function updateChildUI() {
+        let answered = 0;
+        ITEMS.forEach(item => {
+            FORM.querySelectorAll(`input[name="answers[${item.id}]"]`).forEach(r => { if (r.checked) answered++; });
+        });
+        if (answeredEl) answeredEl.textContent = answered;
+        const pct = Math.round(answered / ITEMS.length * 100);
+        if (globalBar) globalBar.style.width = pct + '%';
+        if (pageIndicator) pageIndicator.textContent = 'Page ' + (curPage + 1) + ' / ' + TOTAL_PGS;
+        if (prevBtn) prevBtn.disabled = (curPage === 0);
+        if (nextBtn) nextBtn.disabled = (curPage === TOTAL_PGS - 1);
+        if (completeBtn) completeBtn.style.display = (curPage === TOTAL_PGS - 1) ? '' : 'none';
+    }
+
+    updateChildUI();
+}
+
+/* ════════════════════════════════════════════
+   STANDARD PLAYER (HAD and similar)
+   ════════════════════════════════════════════ */
+function initStandardPlayer() {
+    ROOT.innerHTML = '';
+
+    ITEMS.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card mb-3 qp-item';
+        card.id = 'qp-card-' + item.id;
+
+        const existingVal = EXISTING[item.id] !== undefined ? String(EXISTING[item.id]) : null;
+
+        const se = (DATA.sous_echelles || []).find(s => s.id === item.sous_echelle) || {};
+        const badgeLabel = escHtml(se.label || item.sous_echelle || '');
+        const badgeClass = 'qp-badge-' + (item.sous_echelle || 'default');
+
+        const optionsHtml = item.options.map(opt => {
+            const checked = existingVal === String(opt.valeur) ? 'checked' : '';
+            const sel = checked ? ' selected' : '';
+            return `<label class="qp-option${sel}">
+                <input type="radio" name="answers[${escHtml(item.id)}]" value="${opt.valeur}" ${checked}>
+                ${escHtml(opt.label)}
+            </label>`;
+        }).join('');
+
+        card.innerHTML = `
+            <div class="card-body">
+                <div class="d-flex align-items-start gap-2 mb-3">
+                    <span class="text-muted fw-bold" style="min-width:2rem;">${idx + 1}.</span>
+                    <div class="flex-grow-1">
+                        <span class="qp-badge-echelle ${escHtml(badgeClass)} mb-2 d-inline-block">${badgeLabel}</span>
+                        <p class="mb-0 fw-semibold">${escHtml(item.texte)}</p>
+                    </div>
+                </div>
+                <div class="qp-options ps-4">${optionsHtml}</div>
+            </div>`;
+
+        if (existingVal !== null) card.classList.add('answered');
+        ROOT.appendChild(card);
+    });
+
+    ROOT.addEventListener('click', function(e) {
+        const label = e.target.closest('.qp-option');
+        if (!label) return;
+        const radio = label.querySelector('input[type=radio]');
+        if (!radio) return;
+        label.closest('.qp-item').querySelectorAll('.qp-option').forEach(l => l.classList.remove('selected'));
+        label.classList.add('selected');
+        label.closest('.qp-item').classList.add('answered');
+    });
+
+    ROOT.addEventListener('change', updateScores);
+    updateScores();
+}
+
+function updateScores() {
+    const scores = {};
+    (DATA.sous_echelles || []).forEach(se => { scores[se.id] = 0; });
+    let answeredCount = 0;
+
+    ITEMS.forEach(item => {
+        FORM.querySelectorAll(`input[name="answers[${item.id}]"]`).forEach(r => {
+            if (r.checked) {
+                scores[item.sous_echelle] = (scores[item.sous_echelle] || 0) + Number(r.value);
+                answeredCount++;
+            }
+        });
+    });
+
+    (DATA.sous_echelles || []).forEach(se => {
+        const scoreEl  = document.getElementById('qp-score-' + se.id);
+        const threshEl = document.getElementById('qp-threshold-' + se.id);
+        if (scoreEl)  scoreEl.textContent = scores[se.id];
+        if (threshEl) {
+            const t = (DATA.scoring && DATA.scoring.seuils || [])
+                .find(s => s.sous_echelle === se.id && scores[se.id] >= s.min && scores[se.id] <= s.max);
+            threshEl.textContent = t ? t.label : '';
+            threshEl.className   = 'qp-threshold-badge' + (t ? ' qp-threshold-' + t.niveau : '');
+        }
+    });
+
+    const countEl = document.getElementById('qp-answered-count');
+    if (countEl) countEl.textContent = answeredCount;
+}
+
+/* ════════════════════════════════════════════
+   PARENT MODE PLAYER (Brown ENF Parents + parent_mode)
+   ════════════════════════════════════════════ */
+function initParentPlayer() {
+    ROOT.innerHTML = '';
+
+    /* Items in strict numerical order */
+    ITEMS.forEach(item => {
+        const existingVal = EXISTING[item.id] !== undefined ? String(EXISTING[item.id]) : null;
+
+        const card = document.createElement('div');
+        card.className = 'card mb-3 qp-item' + (existingVal !== null ? ' answered' : '');
+        card.id = 'qp-card-' + item.id;
+
+        const btnsHtml = item.options.map(opt => {
+            const sel = existingVal === String(opt.valeur) ? ' selected' : '';
+            return `<button type="button" class="qp-apmt-btn${sel}"
+                            data-item="${escHtml(item.id)}" data-val="${opt.valeur}"
+                            aria-pressed="${existingVal === String(opt.valeur) ? 'true' : 'false'}"
+                            aria-label="${escHtml(opt.code)} — ${escHtml(opt.label)}">
+                <span class="qp-apmt-code" aria-hidden="true">${escHtml(opt.code)}</span>
+                <span class="qp-apmt-label">${escHtml(opt.label)}</span>
+                <input type="radio" name="answers[${escHtml(item.id)}]" value="${opt.valeur}"
+                       ${existingVal === String(opt.valeur) ? 'checked' : ''}
+                       style="position:absolute;opacity:0;pointer-events:none;"
+                       aria-hidden="true" tabindex="-1">
+            </button>`;
+        }).join('');
+
+        card.innerHTML = `
+            <div class="card-body py-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="text-muted fw-bold flex-shrink-0" style="min-width:2.5rem;font-size:1rem;">${item.ordre_affichage}.</span>
+                    <div class="flex-grow-1">
+                        <p class="mb-3 fw-semibold" style="font-size:1.02rem;line-height:1.6;">${escHtml(item.texte)}</p>
+                        <div class="qp-apmt-options" role="group" aria-label="Évaluation item ${item.ordre_affichage}">${btnsHtml}</div>
+                    </div>
+                </div>
+            </div>`;
+
+        ROOT.appendChild(card);
+    });
+
+    /* Event delegation: APMT button clicks */
+    ROOT.addEventListener('click', function(e) {
+        const btn = e.target.closest('.qp-apmt-btn');
+        if (!btn) return;
+
+        const optionsDiv = btn.closest('.qp-apmt-options');
+        optionsDiv.querySelectorAll('.qp-apmt-btn').forEach(b => {
+            b.classList.remove('selected');
+            b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('selected');
+        btn.setAttribute('aria-pressed', 'true');
+
+        const radio = btn.querySelector('input[type=radio]');
+        if (radio) radio.checked = true;
+
+        btn.closest('.qp-item').classList.add('answered');
+        updateParentUI();
+    });
+
+    /* Keyboard: Space/Enter on APMT button */
+    ROOT.addEventListener('keydown', function(e) {
+        if ((e.key === ' ' || e.key === 'Enter') && e.target.classList.contains('qp-apmt-btn')) {
+            e.preventDefault();
+            e.target.click();
+        }
+    });
+
+    /* Meta fields change */
+    document.querySelectorAll('.parent-meta-required').forEach(el => {
+        el.addEventListener('input', updateParentUI);
+        el.addEventListener('change', updateParentUI);
+    });
+
+    /* Lien "Autre" toggle */
+    document.querySelectorAll('[name="answers[_meta_lien]"]').forEach(r => {
+        r.addEventListener('change', function() {
+            const wrap = document.getElementById('meta_lien_autre_wrap');
+            if (wrap) wrap.style.display = this.value === 'autre' ? '' : 'none';
+            updateParentUI();
+        });
+    });
+    /* Init Autre wrap state */
+    const curLien = document.querySelector('[name="answers[_meta_lien]"]:checked');
+    if (curLien && curLien.value === 'autre') {
+        const w = document.getElementById('meta_lien_autre_wrap');
+        if (w) w.style.display = '';
+    }
+
+    /* Age auto-calculation */
+    function calcAge() {
+        const adminEl = document.getElementById('meta_date_admin');
+        const naissEl = document.getElementById('meta_date_naissance');
+        const displayEl = document.getElementById('meta_age_display');
+        if (!adminEl || !naissEl || !displayEl) return;
+        if (!adminEl.value || !naissEl.value) { displayEl.textContent = '—'; return; }
+        const admin = new Date(adminEl.value);
+        const naiss = new Date(naissEl.value);
+        if (isNaN(admin) || isNaN(naiss) || naiss >= admin) { displayEl.textContent = '—'; return; }
+        let years = admin.getFullYear() - naiss.getFullYear();
+        let months = admin.getMonth() - naiss.getMonth();
+        let days = admin.getDate() - naiss.getDate();
+        if (days < 0) { months--; days += new Date(admin.getFullYear(), admin.getMonth(), 0).getDate(); }
+        if (months < 0) { years--; months += 12; }
+        displayEl.textContent = years + ' ans ' + months + ' mois ' + days + ' j.';
+    }
+    ['meta_date_admin', 'meta_date_naissance'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', calcAge);
+    });
+    calcAge();
+
+    updateParentUI();
+}
+
+function updateParentUI() {
+    let answered = 0;
+    ITEMS.forEach(item => {
+        FORM.querySelectorAll(`input[name="answers[${item.id}]"]`).forEach(r => {
+            if (r.checked) answered++;
+        });
+    });
+
+    const total = ITEMS.length;
+    const pct = Math.round(answered / total * 100);
+
+    const bar       = document.getElementById('qp-global-bar');
+    const progLabel = document.getElementById('qp-parent-progress-label');
+    const statusEl  = document.getElementById('qp-parent-status');
+    const completeBtn = document.getElementById('qp-btn-complete');
+
+    if (bar)       bar.style.width = pct + '%';
+    if (progLabel) progLabel.textContent = answered + ' / ' + total + ' réponses';
+
+    /* Check required header fields */
+    const prenomEl   = document.querySelector('[name="answers[_meta_evaluateur_prenom]"]');
+    const nomEl      = document.querySelector('[name="answers[_meta_evaluateur_nom]"]');
+    const lienChecked = document.querySelector('[name="answers[_meta_lien]"]:checked');
+    const enfantPrenomEl = document.querySelector('[name="answers[_meta_enfant_prenom]"]');
+    const enfantNomEl    = document.querySelector('[name="answers[_meta_enfant_nom]"]');
+
+    const allHeaderFilled =
+        (prenomEl && prenomEl.value.trim() !== '') &&
+        (nomEl && nomEl.value.trim() !== '') &&
+        !!lienChecked &&
+        (enfantPrenomEl && enfantPrenomEl.value.trim() !== '') &&
+        (enfantNomEl && enfantNomEl.value.trim() !== '');
+
+    const allDone = (answered === total) && allHeaderFilled;
+
+    if (statusEl) {
+        if (!allHeaderFilled) {
+            statusEl.textContent = 'Complétez les champs obligatoires de l\'en-tête.';
+            statusEl.style.color = '';
+        } else if (answered < total) {
+            statusEl.textContent = (total - answered) + ' item(s) sans réponse.';
+            statusEl.style.color = '';
+        } else {
+            statusEl.textContent = '✓ Prêt à soumettre';
+            statusEl.style.color = '#1a6fa8';
+        }
+    }
+
+    if (completeBtn) {
+        completeBtn.disabled = !allDone;
+        completeBtn.title = allDone ? '' : 'Remplissez tous les items et les champs obligatoires pour soumettre';
+        completeBtn.style.opacity = allDone ? '1' : '.5';
+    }
+}
+
+/* ════════════════════════════════════════════
+   ADOLESCENT MODE PLAYER (Brown ADO auto-questionnaire)
+   ════════════════════════════════════════════ */
+function initAdolescentPlayer() {
+    ROOT.innerHTML = '';
+
+    ITEMS.forEach(item => {
+        const existingVal = EXISTING[item.id] !== undefined ? String(EXISTING[item.id]) : null;
+
+        const card = document.createElement('div');
+        card.className = 'card mb-3 qp-item' + (existingVal !== null ? ' answered' : '');
+        card.id = 'qp-card-' + item.id;
+
+        const btnsHtml = item.options.map(opt => {
+            const sel = existingVal === String(opt.valeur) ? ' selected' : '';
+            return `<button type="button" class="qp-apmt-btn${sel}"
+                            data-item="${escHtml(item.id)}" data-val="${opt.valeur}"
+                            aria-pressed="${existingVal === String(opt.valeur) ? 'true' : 'false'}"
+                            aria-label="${escHtml(opt.code)} — ${escHtml(opt.label)}">
+                <span class="qp-apmt-code" aria-hidden="true">${escHtml(opt.code)}</span>
+                <span class="qp-apmt-label">${escHtml(opt.label)}</span>
+                <input type="radio" name="answers[${escHtml(item.id)}]" value="${opt.valeur}"
+                       ${existingVal === String(opt.valeur) ? 'checked' : ''}
+                       style="position:absolute;opacity:0;pointer-events:none;"
+                       aria-hidden="true" tabindex="-1">
+            </button>`;
+        }).join('');
+
+        card.innerHTML = `
+            <div class="card-body py-3">
+                <div class="d-flex align-items-start gap-3">
+                    <span class="text-muted fw-bold flex-shrink-0" style="min-width:2.5rem;font-size:1.05rem;">${item.ordre_affichage}.</span>
+                    <div class="flex-grow-1">
+                        <p class="mb-3 fw-semibold" style="font-size:1.05rem;line-height:1.65;">${escHtml(item.texte)}</p>
+                        <div class="qp-apmt-options" role="group" aria-label="Évaluation item ${item.ordre_affichage}">${btnsHtml}</div>
+                    </div>
+                </div>
+            </div>`;
+
+        ROOT.appendChild(card);
+    });
+
+    ROOT.addEventListener('click', function(e) {
+        const btn = e.target.closest('.qp-apmt-btn');
+        if (!btn) return;
+        btn.closest('.qp-apmt-options').querySelectorAll('.qp-apmt-btn').forEach(b => {
+            b.classList.remove('selected');
+            b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('selected');
+        btn.setAttribute('aria-pressed', 'true');
+        const radio = btn.querySelector('input[type=radio]');
+        if (radio) radio.checked = true;
+        btn.closest('.qp-item').classList.add('answered');
+        updateAdolescentUI();
+    });
+
+    ROOT.addEventListener('keydown', function(e) {
+        if ((e.key === ' ' || e.key === 'Enter') && e.target.classList.contains('qp-apmt-btn')) {
+            e.preventDefault();
+            e.target.click();
+        }
+    });
+
+    updateAdolescentUI();
+}
+
+function updateAdolescentUI() {
+    let answered = 0;
+    ITEMS.forEach(item => {
+        FORM.querySelectorAll(`input[name="answers[${item.id}]"]`).forEach(r => {
+            if (r.checked) answered++;
+        });
+    });
+
+    const total = ITEMS.length;
+    const pct   = Math.round(answered / total * 100);
+
+    const bar        = document.getElementById('qp-global-bar');
+    const progLabel  = document.getElementById('qp-ado-progress-label');
+    const statusEl   = document.getElementById('qp-ado-status');
+    const completeBtn = document.getElementById('qp-btn-complete');
+
+    if (bar)       bar.style.width = pct + '%';
+    if (progLabel) progLabel.textContent = answered + ' / ' + total + ' réponses';
+
+    const allDone = (answered === total);
+
+    if (statusEl) {
+        if (answered < total) {
+            statusEl.textContent = (total - answered) + ' item(s) sans réponse.';
+            statusEl.style.color = '';
+        } else {
+            statusEl.textContent = '✓ Prêt à soumettre';
+            statusEl.style.color = '#4a9b8f';
+        }
+    }
+
+    if (completeBtn) {
+        completeBtn.disabled = !allDone;
+        completeBtn.style.opacity = allDone ? '1' : '.5';
+        completeBtn.title = allDone ? '' : 'Réponds à tous les items pour soumettre';
+    }
+}
+
+/* ── Dispatch ── */
+if (DATA.teacher_mode) {
+    initTeacherPlayer();
+} else if (DATA.parent_mode) {
+    initParentPlayer();
+} else if (DATA.adolescent_mode) {
+    initAdolescentPlayer();
+} else if (DATA.child_mode) {
+    initChildPlayer();
+} else {
+    initStandardPlayer();
+}
+
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,94 @@
+{
+  "formType": "senior",
+  "title": "Anamnèse Neuropsychologique — Senior",
+  "description": "Ce formulaire peut être rempli par le patient lui-même ou avec l'aide d'un aidant. Toutes les informations sont strictement confidentielles.",
+  "ageRange": "65 ans et plus",
+  "sections": [
+    {
+      "id": "motif_section",
+      "title": "Motif de consultation",
+      "fields": [
+        {"id": "motif_consultation", "type": "textarea", "label": "Motif de consultation", "required": true, "placeholder": "Difficultés de mémoire, désorientation, troubles du langage…", "description": "Décrivez les difficultés qui vous amènent à consulter."},
+        {"id": "depuis_quand",       "type": "textarea", "label": "Depuis quand ces difficultés sont-elles présentes ?", "description": "Évolution progressive ou survenue soudaine ? Aggravation récente ?"}
+      ]
+    },
+    {
+      "id": "antecedents_section",
+      "title": "Antécédents médicaux",
+      "fields": [
+        {"id": "antecedents_medicaux",     "type": "textarea", "label": "Antécédents médicaux",             "placeholder": "Maladies chroniques, hospitalisations, AVC, traumatismes crâniens…"},
+        {"id": "antecedents_familiaux",    "type": "textarea", "label": "Antécédents familiaux",             "description": "Maladies neurodégénératives (Alzheimer, Parkinson, etc.) dans la famille proche."},
+        {"id": "antecedents_psychiatrique","type": "textarea", "label": "Antécédents psychiatriques",        "description": "Épisodes dépressifs, anxiété chronique, hospitalisations psychiatriques."}
+      ]
+    },
+    {
+      "id": "traitements_section",
+      "title": "Traitements en cours",
+      "fields": [
+        {"id": "traitements_en_cours",  "type": "textarea", "label": "Traitements médicamenteux en cours", "placeholder": "Nom, dosage, depuis quand…", "description": "Listez tous les médicaments, y compris ceux sans ordonnance."},
+        {"id": "traitements_recents",   "type": "textarea", "label": "Changements de traitements récents",  "description": "Arrêt ou introduction d'un traitement dans les 6 derniers mois."}
+      ]
+    },
+    {
+      "id": "autonomie_section",
+      "title": "Vie quotidienne et autonomie",
+      "fields": [
+        {"id": "autonomie",             "type": "select",   "label": "Niveau d'autonomie", "options": [
+          {"value": "autonome",          "label": "Totalement autonome"},
+          {"value": "aide_partielle",    "label": "Aide partielle (courses, ménage…)"},
+          {"value": "aide_importante",   "label": "Aide importante au quotidien"},
+          {"value": "dependant",         "label": "Dépendant pour les actes essentiels"}
+        ]},
+        {"id": "difficultes_quotidiennes","type": "textarea", "label": "Difficultés dans la vie quotidienne", "description": "Gestion des finances, prise de médicaments, cuisine, conduite automobile, utilisation du téléphone…"},
+        {"id": "situation_familiale",   "type": "select",   "label": "Situation familiale", "options": [
+          {"value": "en_couple",         "label": "En couple / marié(e)"},
+          {"value": "seul",              "label": "Seul(e)"},
+          {"value": "veuf",              "label": "Veuf/Veuve"},
+          {"value": "famille_proche",    "label": "Vit avec la famille"}
+        ]},
+        {"id": "lieu_vie",              "type": "select",   "label": "Lieu de vie", "options": [
+          {"value": "domicile",          "label": "Domicile personnel"},
+          {"value": "domicile_famille",  "label": "Domicile d'un proche"},
+          {"value": "ehpad",             "label": "EHPAD / résidence médicalisée"},
+          {"value": "residence_senior",  "label": "Résidence seniors"}
+        ]}
+      ]
+    },
+    {
+      "id": "cognitif_section",
+      "title": "Plaintes cognitives",
+      "fields": [
+        {"id": "plaintes_memoire",      "type": "textarea", "label": "Plaintes de mémoire",                "description": "Oubli de noms, de rendez-vous, d'où l'on a posé les objets, répétitions fréquentes…"},
+        {"id": "plaintes_orientation",  "type": "textarea", "label": "Orientation et repères temporels",   "description": "Difficultés à se repérer dans le temps, le lieu, à reconnaître des personnes ?"},
+        {"id": "plaintes_cognitives",   "type": "textarea", "label": "Autres plaintes cognitives",          "description": "Langage, attention, planification, raisonnement, conduite automobile…"}
+      ]
+    },
+    {
+      "id": "qualite_vie_section",
+      "title": "Qualité de vie et sommeil",
+      "fields": [
+        {"id": "sommeil", "type": "select", "label": "Qualité du sommeil", "options": [
+          {"value": "normal",         "label": "Normal"},
+          {"value": "perturbe",       "label": "Perturbé"},
+          {"value": "insomnie",       "label": "Insomnie"},
+          {"value": "hypersomnie",    "label": "Hypersomnie / somnolence diurne"}
+        ]},
+        {"id": "precision_sommeil",  "type": "textarea", "label": "Précisions sur le sommeil", "description": "Agitation nocturne, comportements anormaux, apnées ?"},
+        {"id": "humeur",             "type": "textarea", "label": "Humeur générale",            "description": "Signes de dépression, anxiété, irritabilité, apathie, indifférence aux activités habituelles ?"},
+        {"id": "lateralite", "type": "select", "label": "Latéralité", "options": [
+          {"value": "droitier",   "label": "Droitier(ère)"},
+          {"value": "gaucher",    "label": "Gaucher(ère)"},
+          {"value": "ambidextre", "label": "Ambidextre"}
+        ]}
+      ]
+    },
+    {
+      "id": "entourage_section",
+      "title": "Entourage et soutien",
+      "fields": [
+        {"id": "entourage",           "type": "textarea", "label": "Entourage familial et social",        "description": "Avec qui vivez-vous ? Des proches sont-ils présents régulièrement ?"},
+        {"id": "avis_entourage",      "type": "textarea", "label": "Avis de l'entourage sur les difficultés", "description": "L'entourage observe-t-il des changements ? Sont-ils inquiets ?"}
+      ]
+    }
+  ]
+}

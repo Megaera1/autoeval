@@ -1,0 +1,187 @@
+[{
+  "id": "HAD",
+  "nom": "Hospital Anxiety and Depression Scale (HAD)",
+  "auteurs": "Zigmond & Snaith",
+  "instructions": "Ce questionnaire explore vos symptômes anxieux et dépressifs. Pour chaque item, cochez la réponse qui correspond le mieux à ce que vous avez ressenti au cours de la dernière semaine.",
+  "sous_echelles": [
+    {
+      "id": "anxiete",
+      "label": "Anxiété",
+      "items_ids": ["A1","A2","A3","A4","A5","A6","A7"],
+      "score_max": 21
+    },
+    {
+      "id": "depression",
+      "label": "Dépression",
+      "items_ids": ["D1","D2","D3","D4","D5","D6","D7"],
+      "score_max": 21
+    }
+  ],
+  "items": [
+    {
+      "id": "A1", "sous_echelle": "anxiete", "ordre_affichage": 1,
+      "texte": "Je me sens tendu ou énervé.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "Jamais", "valeur": 0},
+        {"label": "De temps en temps", "valeur": 1},
+        {"label": "Souvent", "valeur": 2},
+        {"label": "La plupart du temps", "valeur": 3}
+      ]
+    },
+    {
+      "id": "D1", "sous_echelle": "depression", "ordre_affichage": 2,
+      "texte": "Je prends plaisir aux mêmes choses qu'autrefois.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "Oui, tout autant", "valeur": 0},
+        {"label": "Pas autant", "valeur": 1},
+        {"label": "Un peu seulement", "valeur": 2},
+        {"label": "Presque plus", "valeur": 3}
+      ]
+    },
+    {
+      "id": "A2", "sous_echelle": "anxiete", "ordre_affichage": 3,
+      "texte": "J'ai une sensation de peur comme si quelque chose d'horrible allait m'arriver.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "Pas du tout", "valeur": 0},
+        {"label": "Un peu mais cela ne m'inquiète pas", "valeur": 1},
+        {"label": "Oui, mais ce n'est pas trop grave", "valeur": 2},
+        {"label": "Oui, très nettement", "valeur": 3}
+      ]
+    },
+    {
+      "id": "D2", "sous_echelle": "depression", "ordre_affichage": 4,
+      "texte": "Je ris facilement et vois le bon côté des choses.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "Autant que par le passé", "valeur": 0},
+        {"label": "Plus autant qu'avant", "valeur": 1},
+        {"label": "Vraiment moins qu'avant", "valeur": 2},
+        {"label": "Plus du tout", "valeur": 3}
+      ]
+    },
+    {
+      "id": "A3", "sous_echelle": "anxiete", "ordre_affichage": 5,
+      "texte": "Je me fais du souci.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "Très occasionnellement", "valeur": 0},
+        {"label": "Occasionnellement", "valeur": 1},
+        {"label": "Assez souvent", "valeur": 2},
+        {"label": "Très souvent", "valeur": 3}
+      ]
+    },
+    {
+      "id": "D3", "sous_echelle": "depression", "ordre_affichage": 6,
+      "texte": "Je suis de bonne humeur.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "La plupart du temps", "valeur": 0},
+        {"label": "Assez souvent", "valeur": 1},
+        {"label": "Rarement", "valeur": 2},
+        {"label": "Jamais", "valeur": 3}
+      ]
+    },
+    {
+      "id": "A4", "sous_echelle": "anxiete", "ordre_affichage": 7,
+      "texte": "Je peux rester tranquillement assis à ne rien faire et me sentir décontracté.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "Oui, quoi qu'il arrive", "valeur": 0},
+        {"label": "Oui, en général", "valeur": 1},
+        {"label": "Rarement", "valeur": 2},
+        {"label": "Jamais", "valeur": 3}
+      ]
+    },
+    {
+      "id": "D4", "sous_echelle": "depression", "ordre_affichage": 8,
+      "texte": "J'ai l'impression de fonctionner au ralenti.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "Jamais", "valeur": 0},
+        {"label": "Parfois", "valeur": 1},
+        {"label": "Très souvent", "valeur": 2},
+        {"label": "Presque toujours", "valeur": 3}
+      ]
+    },
+    {
+      "id": "A5", "sous_echelle": "anxiete", "ordre_affichage": 9,
+      "texte": "J'éprouve des sensations de peur et j'ai l'estomac noué.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "Jamais", "valeur": 0},
+        {"label": "Parfois", "valeur": 1},
+        {"label": "Assez souvent", "valeur": 2},
+        {"label": "Très souvent", "valeur": 3}
+      ]
+    },
+    {
+      "id": "D5", "sous_echelle": "depression", "ordre_affichage": 10,
+      "texte": "Je ne m'intéresse plus à mon apparence.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "J'y prête autant d'attention que par le passé", "valeur": 0},
+        {"label": "Il se peut que je n'y fasse plus autant attention", "valeur": 1},
+        {"label": "Je n'y accorde pas autant d'attention que je devrais", "valeur": 2},
+        {"label": "Plus du tout", "valeur": 3}
+      ]
+    },
+    {
+      "id": "A6", "sous_echelle": "anxiete", "ordre_affichage": 11,
+      "texte": "J'ai la bougeotte et n'arrive pas à tenir en place.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "Pas du tout", "valeur": 0},
+        {"label": "Pas tellement", "valeur": 1},
+        {"label": "Un peu", "valeur": 2},
+        {"label": "Oui, c'est tout à fait le cas", "valeur": 3}
+      ]
+    },
+    {
+      "id": "D6", "sous_echelle": "depression", "ordre_affichage": 12,
+      "texte": "Je me réjouis d'avance à l'idée de faire certaines choses.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "Autant qu'avant", "valeur": 0},
+        {"label": "Un peu moins qu'avant", "valeur": 1},
+        {"label": "Bien moins qu'avant", "valeur": 2},
+        {"label": "Presque jamais", "valeur": 3}
+      ]
+    },
+    {
+      "id": "A7", "sous_echelle": "anxiete", "ordre_affichage": 13,
+      "texte": "J'éprouve des sensations soudaines de panique.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "Jamais", "valeur": 0},
+        {"label": "Pas très souvent", "valeur": 1},
+        {"label": "Assez souvent", "valeur": 2},
+        {"label": "Vraiment très souvent", "valeur": 3}
+      ]
+    },
+    {
+      "id": "D7", "sous_echelle": "depression", "ordre_affichage": 14,
+      "texte": "Je peux prendre plaisir à un bon livre ou à une bonne émission radio ou télévision.",
+      "type": "likert4", "inverse": false,
+      "options": [
+        {"label": "Souvent", "valeur": 0},
+        {"label": "Parfois", "valeur": 1},
+        {"label": "Rarement", "valeur": 2},
+        {"label": "Très rarement", "valeur": 3}
+      ]
+    }
+  ],
+  "scoring": {
+    "regles": "Sommer séparément les scores Anxiété (items A) et Dépression (items D). Maximum 21 points chacun. Les items sont présentés en alternance A/D dans la passation.",
+    "seuils": [
+      {"sous_echelle": "anxiete", "min": 0, "max": 7, "label": "Absence de symptômes anxieux", "niveau": "normal"},
+      {"sous_echelle": "anxiete", "min": 8, "max": 10, "label": "État anxieux douteux", "niveau": "douteux"},
+      {"sous_echelle": "anxiete", "min": 11, "max": 21, "label": "État anxieux certain", "niveau": "certain"},
+      {"sous_echelle": "depression", "min": 0, "max": 7, "label": "Absence de symptômes dépressifs", "niveau": "normal"},
+      {"sous_echelle": "depression", "min": 8, "max": 10, "label": "État dépressif douteux", "niveau": "douteux"},
+      {"sous_echelle": "depression", "min": 11, "max": 21, "label": "État dépressif certain", "niveau": "certain"}
+    ]
+  }
+}]
