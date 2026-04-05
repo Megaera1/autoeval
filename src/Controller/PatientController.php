@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\PatientProfileFormType;
+use App\Repository\AnamnesisRepository;
+use App\Repository\AssignedQuestionnaireRepository;
 use App\Repository\QuestionnaireRepository;
 use App\Repository\QuestionnaireResponseRepository;
 use App\Service\PatientService;
@@ -15,6 +17,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/patient')]
@@ -76,6 +81,43 @@ class PatientController extends AbstractController
             'form' => $form,
             'user' => $user,
         ]);
+    }
+
+    #[Route('/delete-account', name: 'app_patient_delete_account', methods: ['POST'])]
+    public function deleteAccount(
+        Request $request,
+        CsrfTokenManagerInterface $csrfTokenManager,
+        TokenStorageInterface $tokenStorage,
+        QuestionnaireResponseRepository $responseRepository,
+        AssignedQuestionnaireRepository $assignedRepository,
+        AnamnesisRepository $anamnesisRepository,
+    ): Response {
+        if (!$csrfTokenManager->isTokenValid(new CsrfToken('delete_account', $request->request->get('_token')))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
+        }
+
+        /** @var User $user */
+        $user = $this->getUser();
+
+        foreach ($responseRepository->findBy(['patient' => $user]) as $response) {
+            $this->em->remove($response);
+        }
+        foreach ($assignedRepository->findBy(['patient' => $user]) as $assigned) {
+            $this->em->remove($assigned);
+        }
+        $anamnesis = $anamnesisRepository->findOneBy(['patient' => $user]);
+        if ($anamnesis) {
+            $this->em->remove($anamnesis);
+        }
+        $this->em->remove($user);
+        $this->em->flush();
+
+        $tokenStorage->setToken(null);
+        $request->getSession()->invalidate();
+
+        $this->addFlash('success', 'Votre compte et toutes vos données ont été supprimés définitivement.');
+
+        return $this->redirectToRoute('app_home');
     }
 
     #[Route('/dashboard', name: 'app_patient_dashboard')]

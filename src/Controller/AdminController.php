@@ -15,6 +15,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin')]
@@ -138,6 +140,36 @@ class AdminController extends AbstractController
             'form' => $form,
             'patient' => $patient,
         ]);
+    }
+
+    #[Route('/patient/{id}/delete', name: 'app_admin_patient_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[IsGranted('ROLE_NEUROPSYCHOLOGUE')]
+    public function deletePatient(int $id, Request $request, UserRepository $userRepository, CsrfTokenManagerInterface $csrfTokenManager): Response
+    {
+        if (!$csrfTokenManager->isTokenValid(new CsrfToken('delete_patient_' . $id, $request->request->get('_token')))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
+        }
+
+        $patient = $userRepository->find($id);
+        if (!$patient) {
+            throw $this->createNotFoundException('Patient introuvable.');
+        }
+        if (!in_array('ROLE_PATIENT', $patient->getRoles(), true)) {
+            throw $this->createAccessDeniedException('Ce compte n\'est pas un patient.');
+        }
+
+        /** @var User $admin */
+        $admin = $this->getUser();
+        $this->neuropsychologueService->deletePatientAccount($patient);
+
+        $this->logger->info('Patient #{patientId} supprimé par neuropsychologue #{adminId}', [
+            'patientId' => $id,
+            'adminId'   => $admin->getId(),
+        ]);
+
+        $this->addFlash('success', 'Le compte du patient et toutes ses données ont été supprimés définitivement.');
+
+        return $this->redirectToRoute('app_admin_dashboard');
     }
 
     #[Route('/patient/{id}/export', name: 'app_admin_patient_export', requirements: ['id' => '\d+'])]

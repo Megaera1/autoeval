@@ -39,6 +39,8 @@ class RegistrationController extends AbstractController
 
             $user->setPassword($passwordHasher->hashPassword($user, $plainPassword));
             $user->setRoles(['ROLE_PATIENT']);
+            $user->setConsentAccepted(true);
+            $user->setConsentAcceptedAt(new \DateTimeImmutable());
 
             $entityManager->persist($user);
             $entityManager->flush();

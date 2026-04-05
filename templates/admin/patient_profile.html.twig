@@ -1655,4 +1655,76 @@
     </div>
 </div>
 
+{# ── Zone de suppression définitive ── #}
+<div class="container-xl mb-5">
+    <div class="card" style="border: 2px solid var(--tblr-danger);">
+        <div class="card-header bg-danger-lt">
+            <h3 class="card-title text-danger">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-alert-triangle me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M12 9v4m0 4h.01"/>
+                    <path d="M5.07 19h13.86a2 2 0 0 0 1.75 -2.97l-6.93 -12.02a2 2 0 0 0 -3.5 0l-6.93 12.02a2 2 0 0 0 1.75 2.97z"/>
+                </svg>
+                Suppression définitive du dossier
+            </h3>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-4">
+                Cette action supprimera définitivement le compte du patient,
+                son anamnèse, et tous ses questionnaires. Elle est conforme aux obligations
+                RGPD de droit à l'effacement (Art. 17). Elle ne peut pas être annulée.
+            </p>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deletePatientModal">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user-x me-1" width="18" height="18" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/>
+                    <path d="M6 21v-2a4 4 0 0 1 4 -4h3.5"/>
+                    <path d="M22 22l-5 -5"/>
+                    <path d="M17 22l5 -5"/>
+                </svg>
+                Supprimer le dossier patient
+            </button>
+        </div>
+    </div>
+</div>
+
+{# ── Modale de confirmation ── #}
+<div class="modal modal-blur fade" id="deletePatientModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-alert-circle me-2" width="20" height="20" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                        <circle cx="12" cy="12" r="9"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    Supprimer le dossier de {{ patient.fullName }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body text-muted">
+                Toutes les données de ce patient seront effacées de la base de données.
+                Cette action est définitive et conforme au droit à l'effacement (RGPD Art. 17).
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form method="POST" action="{{ path('app_admin_patient_delete', {id: patient.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete_patient_' ~ patient.id) }}">
+                    <button type="submit" class="btn btn-danger">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user-x me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                            <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/>
+                            <path d="M6 21v-2a4 4 0 0 1 4 -4h3.5"/>
+                            <path d="M22 22l-5 -5"/>
+                            <path d="M17 22l5 -5"/>
+                        </svg>
+                        Confirmer la suppression définitive
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

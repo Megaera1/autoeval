@@ -55,6 +55,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $resetTokenExpiresAt = null;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $consentAccepted = false;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $consentAcceptedAt = null;
+
     /** @var Collection<int, Anamnesis> */
     #[ORM\OneToMany(targetEntity: Anamnesis::class, mappedBy: 'patient', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $anamneses;
@@ -273,6 +279,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getFullName(): string
     {
         return $this->firstName . ' ' . $this->lastName;
+    }
+
+    public function isConsentAccepted(): bool
+    {
+        return $this->consentAccepted;
+    }
+
+    public function setConsentAccepted(bool $consentAccepted): static
+    {
+        $this->consentAccepted = $consentAccepted;
+
+        return $this;
+    }
+
+    public function getConsentAcceptedAt(): ?\DateTimeImmutable
+    {
+        return $this->consentAcceptedAt;
+    }
+
+    public function setConsentAcceptedAt(?\DateTimeImmutable $consentAcceptedAt): static
+    {
+        $this->consentAcceptedAt = $consentAcceptedAt;
+
+        return $this;
     }
 
     public function getResetToken(): ?string

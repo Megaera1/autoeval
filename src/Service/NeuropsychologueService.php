@@ -189,6 +189,26 @@ class NeuropsychologueService
         return $newlyAssigned;
     }
 
+    public function deletePatientAccount(User $patient): void
+    {
+        if (\in_array('ROLE_NEUROPSYCHOLOGUE', $patient->getRoles(), true)) {
+            throw new \LogicException('Impossible de supprimer le compte d\'un neuropsychologue via cette méthode.');
+        }
+
+        foreach ($this->responseRepository->findBy(['patient' => $patient]) as $response) {
+            $this->em->remove($response);
+        }
+        foreach ($this->assignedQuestionnaireRepository->findBy(['patient' => $patient]) as $assigned) {
+            $this->em->remove($assigned);
+        }
+        $anamnesis = $this->anamnesisRepository->findOneBy(['patient' => $patient]);
+        if ($anamnesis) {
+            $this->em->remove($anamnesis);
+        }
+        $this->em->remove($patient);
+        $this->em->flush();
+    }
+
     public function exportPatientTxt(User $patient): string
     {
         $anamnesis = $this->anamnesisRepository->findOneBy(['patient' => $patient]);
