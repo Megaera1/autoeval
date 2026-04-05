@@ -3,14 +3,17 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Form\PatientProfileFormType;
 use App\Repository\QuestionnaireRepository;
 use App\Repository\QuestionnaireResponseRepository;
 use App\Service\PatientService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -22,6 +25,57 @@ class PatientController extends AbstractController
         private PatientService $patientService,
         private EntityManagerInterface $em,
     ) {
+    }
+
+    #[Route('/profile', name: 'app_patient_profile', methods: ['GET', 'POST'])]
+    public function profile(Request $request, UserPasswordHasherInterface $passwordHasher): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $form = $this->createForm(PatientProfileFormType::class, $user);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $hasError = false;
+
+            $currentPassword = $form->get('currentPassword')->getData();
+            $newPassword     = $form->get('newPassword')->getData();
+
+            if ($currentPassword !== null && $currentPassword !== '') {
+                if (!$passwordHasher->isPasswordValid($user, $currentPassword)) {
+                    $form->get('currentPassword')->addError(
+                        new FormError('Mot de passe actuel incorrect.')
+                    );
+                    $hasError = true;
+                } elseif ($newPassword !== null && $newPassword !== '') {
+                    if (strlen($newPassword) < 8) {
+                        $form->get('newPassword')->addError(
+                            new FormError('Le mot de passe doit contenir au moins 8 caractères.')
+                        );
+                        $hasError = true;
+                    } elseif (!preg_match('/\d/', $newPassword)) {
+                        $form->get('newPassword')->addError(
+                            new FormError('Le mot de passe doit contenir au moins un chiffre.')
+                        );
+                        $hasError = true;
+                    } else {
+                        $user->setPassword($passwordHasher->hashPassword($user, $newPassword));
+                    }
+                }
+            }
+
+            if (!$hasError) {
+                $this->em->flush();
+                $this->addFlash('success', 'Votre profil a été mis à jour.');
+
+                return $this->redirectToRoute('app_patient_profile');
+            }
+        }
+
+        return $this->render('patient/profile.html.twig', [
+            'form' => $form,
+            'user' => $user,
+        ]);
     }
 
     #[Route('/dashboard', name: 'app_patient_dashboard')]

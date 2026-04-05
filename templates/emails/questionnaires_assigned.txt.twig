@@ -1,0 +1,37 @@
+Des questionnaires vous ont été assignés — AutoEval
+===================================================
+
+Bonjour {{ patient.firstName }},
+
+Votre neuropsychologue vient de mettre à disposition
+{{ questionnaires|length == 1 ? 'un nouveau questionnaire' : questionnaires|length ~ ' nouveaux questionnaires' }}
+dans votre espace patient.
+
+
+QUESTIONNAIRES DISPONIBLES
+---------------------------
+{% for questionnaire in questionnaires %}
+- {{ questionnaire.title }}
+{% endfor %}
+
+
+COMMENT RÉPONDRE ?
+---------------------------
+- Répondez à votre rythme — aucun délai imposé.
+- Vos réponses sont sauvegardées automatiquement à chaque étape :
+  vous pouvez interrompre et reprendre à tout moment.
+- Vous pouvez repasser un questionnaire à tout moment
+  pour suivre l'évolution dans le temps.
+
+
+ACCÉDER À MES QUESTIONNAIRES
+---------------------------
+{{ absolute_url(path('app_patient_questionnaires')) }}
+
+
+Vos données médicales sont strictement confidentielles et ne sont
+accessibles qu'à votre neuropsychologue référent.
+
+Pour toute question, contactez votre cabinet neuropsychologique.
+
+AutoEval © {{ "now"|date("Y") }} — Usage clinique exclusif

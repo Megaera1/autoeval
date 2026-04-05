@@ -155,8 +155,9 @@ class NeuropsychologueService
      * Ajoute les nouveaux, supprime ceux décochés.
      *
      * @param int[] $newIds
+     * @return \App\Entity\Questionnaire[] Questionnaires nouvellement assignés lors de cette action
      */
-    public function assignQuestionnaires(User $patient, array $newIds, User $assignedBy): void
+    public function assignQuestionnaires(User $patient, array $newIds, User $assignedBy): array
     {
         $existing    = $this->assignedQuestionnaireRepository->findBy(['patient' => $patient]);
         $existingIds = array_map(
@@ -172,16 +173,20 @@ class NeuropsychologueService
         }
 
         // Add newly checked assignments
+        $newlyAssigned = [];
         foreach ($newIds as $qId) {
             if (!\in_array($qId, $existingIds, true)) {
                 $questionnaire = $this->questionnaireRepository->find($qId);
                 if ($questionnaire) {
                     $this->em->persist(new AssignedQuestionnaire($patient, $questionnaire, $assignedBy));
+                    $newlyAssigned[] = $questionnaire;
                 }
             }
         }
 
         $this->em->flush();
+
+        return $newlyAssigned;
     }
 
     public function exportPatientTxt(User $patient): string

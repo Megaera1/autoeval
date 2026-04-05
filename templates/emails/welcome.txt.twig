@@ -1,0 +1,44 @@
+Bienvenue sur AutoEval — {{ user.firstName }} {{ user.lastName }}
+================================================================
+
+Bonjour {{ user.firstName }},
+
+Votre espace patient AutoEval vient d'être créé.
+
+
+VOS IDENTIFIANTS DE CONNEXION
+------------------------------
+Adresse e-mail : {{ user.email }}
+Mot de passe   : {{ plainPassword }}
+
+Ces identifiants sont affichés une seule fois dans cet email.
+Notez-les ou conservez cet email dans un endroit sûr.
+Vous pourrez modifier votre mot de passe à tout moment depuis la page de connexion.
+
+
+COMMENT FONCTIONNE AUTOEVAL ?
+------------------------------
+1. Complétez l'anamnèse dans votre espace patient dès maintenant —
+   vous pouvez la modifier à tout moment.
+
+2. Votre neuropsychologue sélectionnera ensuite les questionnaires adaptés
+   à votre bilan — vous recevrez un email dès qu'ils seront disponibles.
+
+3. Répondez aux questionnaires à votre rythme — vous pouvez interrompre
+   et reprendre à tout moment, vos réponses sont sauvegardées automatiquement.
+
+4. Vous pouvez repasser les mêmes questionnaires à des moments différents
+   pour suivre l'évolution dans le temps.
+
+
+ACCÉDER À MON ESPACE
+------------------------------
+{{ absolute_url(path('app_patient_dashboard')) }}
+
+
+Vos données médicales sont strictement confidentielles et ne sont accessibles
+qu'à votre neuropsychologue référent.
+
+Pour toute question, contactez votre cabinet neuropsychologique.
+
+AutoEval © {{ "now"|date("Y") }} — Usage clinique exclusif

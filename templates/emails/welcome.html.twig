@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenue sur AutoEval</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #333333;
+        }
+        .wrapper {
+            max-width: 580px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .header {
+            background-color: #2c7be5;
+            padding: 32px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 12px 0 0;
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .header p {
+            margin: 4px 0 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+        }
+        .body {
+            padding: 36px 40px;
+        }
+        .body p {
+            font-size: 15px;
+            line-height: 1.6;
+            margin: 0 0 16px;
+            color: #444444;
+        }
+        h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin: 28px 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e8f0fc;
+        }
+        .credentials {
+            background-color: #f0f5ff;
+            border: 1px solid #c5d8fa;
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin: 0 0 20px;
+        }
+        .credentials table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .credentials td {
+            padding: 6px 0;
+            font-size: 14px;
+        }
+        .credentials td:first-child {
+            color: #666;
+            width: 130px;
+            font-weight: 600;
+        }
+        .credentials td:last-child {
+            color: #1a1a2e;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+        .credentials-notice {
+            font-size: 12px;
+            color: #7a6000;
+            background-color: #fff8e1;
+            border-left: 4px solid #f6c23e;
+            padding: 10px 14px;
+            border-radius: 4px;
+            margin-top: 12px;
+        }
+        ol {
+            padding-left: 20px;
+            margin: 0;
+        }
+        ol li {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #444;
+            margin-bottom: 10px;
+        }
+        .btn-wrapper {
+            text-align: center;
+            margin: 32px 0 8px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #2c7be5;
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 14px 36px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .footer {
+            padding: 20px 40px;
+            border-top: 1px solid #eaeaea;
+            text-align: center;
+            font-size: 12px;
+            color: #999999;
+            line-height: 1.6;
+        }
+        .footer a {
+            color: #2c7be5;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <div class="header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" stroke-width="1.5" stroke="#ffffff" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M15.5 13a3.5 3.5 0 0 0 -3.5 3.5v1a3.5 3.5 0 0 0 7 0v-1.8"/>
+            <path d="M8.5 13a3.5 3.5 0 0 1 3.5 3.5v1a3.5 3.5 0 0 1 -7 0v-1.8"/>
+            <path d="M17.5 16a3.5 3.5 0 0 0 0 -7h-.5"/>
+            <path d="M19 9.3v-2.8a3.5 3.5 0 0 0 -7 0"/>
+            <path d="M6.5 16a3.5 3.5 0 0 1 0 -7h.5"/>
+            <path d="M5 9.3v-2.8a3.5 3.5 0 0 1 7 0v10"/>
+        </svg>
+        <h1>Bienvenue sur AutoEval</h1>
+        <p>Plateforme neuropsychologique</p>
+    </div>
+
+    <div class="body">
+
+        <p>Bonjour <strong>{{ user.firstName }}</strong>,</p>
+        <p>
+            Votre espace patient AutoEval vient d'être créé. Vous trouverez ci-dessous vos identifiants
+            de connexion. Conservez-les précieusement.
+        </p>
+
+        <h2>Vos identifiants de connexion</h2>
+        <div class="credentials">
+            <table>
+                <tr>
+                    <td>Adresse e-mail</td>
+                    <td>{{ user.email }}</td>
+                </tr>
+                <tr>
+                    <td>Mot de passe</td>
+                    <td>{{ plainPassword }}</td>
+                </tr>
+            </table>
+            <div class="credentials-notice">
+                &#9432;&nbsp; Ces identifiants sont affichés <strong>une seule fois</strong> dans cet email.
+                Notez-les ou conservez cet email dans un endroit sûr.
+                Vous pourrez modifier votre mot de passe à tout moment depuis la page de connexion.
+            </div>
+        </div>
+
+        <h2>Comment fonctionne AutoEval ?</h2>
+        <ol>
+            <li>
+                <strong>Complétez l'anamnèse</strong> dans votre espace patient dès maintenant —
+                vous pouvez la modifier à tout moment.
+            </li>
+            <li>
+                <strong>Votre neuropsychologue sélectionnera</strong> ensuite les questionnaires adaptés
+                à votre bilan — vous recevrez un email dès qu'ils seront disponibles.
+            </li>
+            <li>
+                <strong>Répondez aux questionnaires à votre rythme</strong> — vous pouvez interrompre
+                et reprendre à tout moment, vos réponses sont sauvegardées automatiquement.
+            </li>
+            <li>
+                <strong>Vous pouvez repasser les mêmes questionnaires</strong> à des moments différents
+                pour suivre l'évolution dans le temps.
+            </li>
+        </ol>
+
+        <div class="btn-wrapper">
+            <a href="{{ absolute_url(path('app_patient_dashboard')) }}" class="btn">
+                Accéder à mon espace
+            </a>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        <p>
+            &#128274;&nbsp; Vos données médicales sont strictement confidentielles et ne sont accessibles
+            qu'à votre neuropsychologue référent.
+        </p>
+        <p>
+            Pour toute question, contactez votre cabinet neuropsychologique.<br>
+            AutoEval &copy; {{ "now"|date("Y") }} — Usage clinique exclusif
+        </p>
+    </div>
+
+</div>
+</body>
+</html>
