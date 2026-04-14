@@ -99,8 +99,10 @@ class ImportQuestionnaireCommand extends Command
         $questionnaire->setDescription($data['instructions'] ?? null);
         $questionnaire->setIsActive(true);
 
-        // Catégorie : nom des sous-échelles s'il y en a, sinon vide
-        if (!empty($data['sous_echelles'])) {
+        // Catégorie : priorité à la clef 'category' explicite, sinon nom des sous-échelles
+        if (isset($data['category'])) {
+            $questionnaire->setCategory($data['category']);
+        } elseif (!empty($data['sous_echelles'])) {
             $labels = array_column($data['sous_echelles'], 'label');
             $questionnaire->setCategory(implode(' / ', $labels));
         }

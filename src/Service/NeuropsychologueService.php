@@ -422,6 +422,64 @@ class NeuropsychologueService
                     }
                     $lines[] = '   ⚠ Résultat indicatif. Le diagnostic final appartient au clinicien.';
                 }
+            // RAADS-R mode
+            } elseif (!empty($questions['raads_mode'])) {
+                $total      = $answers['_score_total'] ?? '—';
+                $seuilTotal = $questions['scoring']['seuil_total'] ?? 65;
+                $scoreMax   = $questions['scoring']['score_max']   ?? 240;
+
+                // Find interpretation label
+                $interp = '—';
+                if (is_numeric($total) && isset($questions['scoring']['interpretations'])) {
+                    foreach ($questions['scoring']['interpretations'] as $rule) {
+                        if ($total >= ($rule['min'] ?? 0) && $total <= ($rule['max'] ?? PHP_INT_MAX)) {
+                            $interp = $rule['label'];
+                            break;
+                        }
+                    }
+                }
+
+                $lines[] = '   Score total : ' . $total . ' / ' . $scoreMax;
+                $lines[] = '   Seuil TSA   : ' . $seuilTotal
+                    . (is_numeric($total) ? (' — ' . ($total >= $seuilTotal ? '⚠ Seuil atteint' : '✓ En dessous du seuil')) : '');
+                $lines[] = '   Interprétation : ' . $interp;
+                $lines[] = '';
+                $lines[] = '   Sous-scores :';
+
+                foreach ($questions['sous_echelles'] as $se) {
+                    $seScore = $answers['_score_' . $se['id']] ?? '—';
+                    $seSeuil = $se['seuil'] ?? '—';
+                    $lines[] = '   ' . $se['label'] . ' : ' . $seScore . ' / ' . $se['score_max']
+                        . (is_numeric($seScore) && is_numeric($seSeuil)
+                            ? (' (seuil ' . $seSeuil . ($seScore >= $seSeuil ? ' — ⚠ Seuil atteint' : ' — ✓ OK') . ')')
+                            : '');
+                }
+                $lines[] = '';
+
+                // Build option label map
+                $optionLabels = [];
+                foreach ($questions['options'] as $opt) {
+                    $optionLabels[$opt['clef']] = $opt['label'];
+                }
+                $clusterLabels = [];
+                foreach ($questions['sous_echelles'] as $se) {
+                    $clusterLabels[$se['id']] = $se['label'];
+                }
+
+                $items = $questions['items'];
+                usort($items, static fn ($a, $b) => ($a['ordre_affichage'] ?? 0) <=> ($b['ordre_affichage'] ?? 0));
+
+                foreach ($items as $item) {
+                    $rawAnswer   = $answers[$item['id']] ?? null;
+                    $answerLabel = $rawAnswer !== null ? ($optionLabels[$rawAnswer] ?? $rawAnswer) : '—';
+                    $score       = ($rawAnswer !== null && isset($item['scores'][$rawAnswer]))
+                        ? $item['scores'][$rawAnswer]
+                        : '—';
+                    $cluster = $clusterLabels[$item['sous_echelle']] ?? $item['sous_echelle'];
+                    $lines[] = '   [' . $cluster . '] ' . $item['texte'];
+                    $lines[] = '      → ' . $answerLabel . ' (' . $score . ')';
+                }
+
             // Rich format (HAD-like): items stored under 'items' key, keyed by item id
             } elseif (isset($questions['items'])) {
                 $items = $questions['items'];

@@ -1,0 +1,362 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ questionnaire.title }} — AutoEval{% endblock %}
+
+{% block navbar %}
+<header class="navbar navbar-expand-md navbar-dark d-print-none" style="background:#553c9a;">
+    <div class="container-xl">
+        <a href="{{ path('app_home') }}" class="navbar-brand navbar-brand-autodark">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brain me-2" width="28" height="28" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M15.5 13a3.5 3.5 0 0 0 -3.5 3.5v1a3.5 3.5 0 0 0 7 0v-1.8"/>
+                <path d="M8.5 13a3.5 3.5 0 0 1 3.5 3.5v1a3.5 3.5 0 0 1 -7 0v-1.8"/>
+                <path d="M17.5 16a3.5 3.5 0 0 0 0 -7h-.5"/>
+                <path d="M19 9.3v-2.8a3.5 3.5 0 0 0 -7 0"/>
+                <path d="M6.5 16a3.5 3.5 0 0 1 0 -7h.5"/>
+                <path d="M5 9.3v-2.8a3.5 3.5 0 0 1 7 0v10"/>
+            </svg>
+            <strong>AutoEval</strong>
+        </a>
+        <div class="navbar-nav ms-auto d-flex align-items-center gap-3">
+            <span class="text-white">{{ app.user.firstName }}</span>
+            <a href="{{ path('app_logout') }}" class="btn btn-outline-light btn-sm">Déconnexion</a>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block stylesheets %}
+<style>
+:root {
+    --raads-purple: #553c9a;
+    --raads-light:  #f3f0ff;
+    --raads-border: #d6bcfa;
+}
+
+/* Progress bar */
+.raads-progress { height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden; }
+.raads-progress-bar { height:100%; background:var(--raads-purple); transition:width .35s; }
+
+/* Item card */
+.raads-item {
+    border:1.5px solid #e2e8f0; border-radius:10px; margin-bottom:1rem;
+    background:#fff; transition:border-color .15s;
+}
+.raads-item.answered { border-left:4px solid var(--raads-purple); }
+.raads-item-header {
+    padding:.7rem 1.1rem .45rem;
+    font-weight:600; font-size:.96rem; line-height:1.55; color:#1a202c;
+    display:flex; align-items:flex-start; gap:.6rem;
+}
+.raads-item-num {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:1.8rem; height:1.8rem; border-radius:50%; flex-shrink:0;
+    background:var(--raads-purple); color:#fff; font-size:.8rem; font-weight:700;
+}
+.raads-item-body { padding:.3rem 1.1rem .85rem; }
+
+/* Option buttons — 2 cols mobile, 4 cols desktop */
+.raads-options { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; }
+@media (min-width:640px) { .raads-options { grid-template-columns:repeat(4,1fr); } }
+.raads-opt {
+    display:flex; align-items:center; gap:.45rem;
+    padding:.5rem .7rem; border:1.5px solid #cbd5e0; border-radius:7px;
+    cursor:pointer; font-size:.82rem; background:#fff; line-height:1.3;
+    transition:all .12s; user-select:none;
+}
+.raads-opt:hover { border-color:var(--raads-purple); background:var(--raads-light); }
+.raads-opt.selected {
+    background:var(--raads-light); border-color:var(--raads-purple);
+    font-weight:600; color:var(--raads-purple);
+}
+.raads-opt input[type=radio] { display:none; }
+.raads-opt-dot {
+    width:.8rem; height:.8rem; border-radius:50%; flex-shrink:0;
+    border:2px solid #cbd5e0; background:#fff; transition:all .12s;
+}
+.raads-opt.selected .raads-opt-dot { border-color:var(--raads-purple); background:var(--raads-purple); }
+
+/* Consigne */
+.raads-consigne {
+    border-left:4px solid var(--raads-purple); background:var(--raads-light);
+    border-radius:0 8px 8px 0; padding:.85rem 1.1rem; margin-bottom:1.5rem; font-size:.93rem;
+}
+
+/* Sticky bottom bar */
+.raads-sticky-bar {
+    position:sticky; bottom:0; z-index:100;
+    background:#fff; border-top:1px solid #e2e8f0;
+    box-shadow:0 -2px 12px rgba(0,0,0,.08);
+    padding:.65rem 0;
+}
+.raads-status { font-size:.88rem; color:#718096; }
+.raads-autosave-status { font-size:.78rem; color:#a0aec0; }
+.raads-nav-btn { min-width:100px; }
+.raads-all-done { color:var(--raads-purple); font-weight:700; }
+.raads-readonly { pointer-events:none; opacity:.82; user-select:text; }
+</style>
+{% endblock %}
+
+{% set questions    = questionnaire.questions %}
+{% set allItems     = questions.items %}
+{% set options      = questions.options %}
+{% set existing     = response.answers ?? {} %}
+{% set autosaveUrl  = path('app_patient_questionnaire_autosave', {slug: questionnaire.slug, responseId: response.id}) %}
+{% set submitUrl    = path('app_patient_questionnaire_fill',     {slug: questionnaire.slug, responseId: response.id}) %}
+{% set csrfToken    = csrf_token('questionnaire_' ~ questionnaire.id) %}
+
+{% block body %}
+{# Breadcrumb #}
+<div class="page-header mt-3">
+    <div class="row align-items-center">
+        <div class="col">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ path('app_patient_questionnaires') }}">Mes questionnaires</a></li>
+                <li class="breadcrumb-item active">{{ questionnaire.title }}</li>
+            </ol>
+            <h2 class="page-title mt-1">{{ questionnaire.title }}</h2>
+            <div class="d-flex align-items-center gap-3 flex-wrap mt-1">
+                <span class="text-muted small">{{ allItems|length }} items — Ritvo et al.</span>
+                {% set ageAtStart = response.patientAgeAtStart %}
+                {% if ageAtStart is not null %}
+                    <span class="badge bg-blue-lt text-blue" title="Âge au moment de la passation">
+                        {{ ageAtStart }} ans
+                    </span>
+                {% endif %}
+                &nbsp;·&nbsp; <span id="raads-progress-label">Chargement…</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if readOnly %}
+<div class="alert alert-secondary d-flex align-items-center gap-2 mb-3" role="alert">
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-eye flex-shrink-0" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="2"/><path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7"/></svg>
+    <span>Consultation en lecture seule — passation du {{ response.completedAt ? response.completedAt|date('d/m/Y') : response.startedAt|date('d/m/Y') }}
+    {% if response.score is not null %} · Score total : <strong>{{ response.score }}</strong>{% endif %}</span>
+    <a href="{{ path('app_patient_questionnaires') }}" class="btn btn-sm btn-outline-secondary ms-auto">← Retour</a>
+</div>
+{% endif %}
+
+{# Global progress bar #}
+<div class="raads-progress mb-3">
+    <div class="raads-progress-bar" id="raads-global-bar" style="width:0%"></div>
+</div>
+
+{# Consigne #}
+<div class="raads-consigne mb-3">
+    <strong>Comment répondre ?</strong><br>
+    Pour chaque affirmation, choisissez parmi les 4 options celle qui vous correspond le mieux.
+    Il n'y a pas de bonne ou mauvaise réponse — répondez honnêtement en vous basant sur votre vécu.
+    Vos réponses sont sauvegardées automatiquement.
+</div>
+
+{# Hidden form for final submission — JS injects answers as hidden inputs before submit #}
+<form id="raads-form" action="{{ submitUrl }}" method="POST">
+    <input type="hidden" name="_token" value="{{ csrfToken }}">
+    <input type="hidden" name="action" value="complete">
+    <div id="raads-answers-hidden"></div>
+</form>
+
+{# All items in strict numerical order #}
+<div{% if readOnly %} class="raads-readonly"{% endif %}>
+{% for item in allItems|sort((a, b) => a.ordre_affichage <=> b.ordre_affichage) %}
+{% set hasAnswer = existing[item.id] is defined and existing[item.id] is not empty %}
+<div class="raads-item{{ hasAnswer ? ' answered' : '' }}"
+     id="raads-item-{{ item.id }}"
+     data-id="{{ item.id }}">
+    <div class="raads-item-header">
+        <span class="raads-item-num">{{ item.ordre_affichage }}</span>
+        <span>{{ item.texte }}</span>
+    </div>
+    <div class="raads-item-body">
+        <div class="raads-options">
+            {% for opt in options %}
+            {% set isSelected = existing[item.id] is defined and existing[item.id] == opt.clef %}
+            <label class="raads-opt{{ isSelected ? ' selected' : '' }}">
+                <input type="radio" name="answers[{{ item.id }}]" value="{{ opt.clef }}"
+                       {{ isSelected ? 'checked' : '' }}>
+                <span class="raads-opt-dot"></span>
+                {{ opt.short }}
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+
+{# Sticky action bar #}
+<div class="raads-sticky-bar">
+    <div class="container-xl">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+            <div>
+                <div class="raads-status" id="raads-status">Chargement…</div>
+                <div class="raads-autosave-status" id="raads-autosave-status"></div>
+            </div>
+            {% if readOnly %}
+            <a href="{{ path('app_patient_questionnaires') }}" class="btn btn-outline-secondary btn-sm">
+                ← Retour aux questionnaires
+            </a>
+            {% else %}
+            <div class="d-flex gap-2">
+                <button type="button" id="raads-btn-save" class="btn btn-outline-secondary btn-sm">
+                    💾 Sauvegarder
+                </button>
+                <button type="button" id="raads-btn-submit" disabled
+                        class="btn btn-sm text-white fw-bold"
+                        style="background:var(--raads-purple);border-color:var(--raads-purple);opacity:.5;"
+                        title="Répondez à toutes les questions pour soumettre">
+                    ✓ Soumettre
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+(function () {
+'use strict';
+
+/* ── Data from Twig ── */
+const AUTOSAVE_URL = {{ autosaveUrl | json_encode | raw }};
+const SUBMIT_URL   = {{ submitUrl   | json_encode | raw }};
+const CSRF_TOKEN   = {{ csrfToken   | json_encode | raw }};
+const TOTAL        = {{ allItems|length }};
+const READ_ONLY    = {{ readOnly ? 'true' : 'false' }};
+
+/* ── DOM refs ── */
+const statusEl    = document.getElementById('raads-status');
+const autosaveEl  = document.getElementById('raads-autosave-status');
+const progressBar = document.getElementById('raads-global-bar');
+const progressLbl = document.getElementById('raads-progress-label');
+const submitBtn   = document.getElementById('raads-btn-submit');
+const saveBtn     = document.getElementById('raads-btn-save');
+const hiddenCnt   = document.getElementById('raads-answers-hidden');
+const raadsForm   = document.getElementById('raads-form');
+
+/* ── Collect answers from DOM ── */
+function collectAnswers() {
+    const answers = {};
+    document.querySelectorAll('.raads-item').forEach(card => {
+        const id      = card.dataset.id;
+        const checked = card.querySelector(`input[name="answers[${id}]"]:checked`);
+        if (checked) answers[id] = checked.value;
+    });
+    return answers;
+}
+
+/* ── Count answered items ── */
+function countAnswered() {
+    let n = 0;
+    document.querySelectorAll('.raads-item').forEach(card => {
+        if (card.querySelector('input[type=radio]:checked')) n++;
+    });
+    return n;
+}
+
+/* ── Update global UI ── */
+function updateUI() {
+    const answered = countAnswered();
+    const pct      = Math.round(answered / TOTAL * 100);
+
+    if (progressBar) progressBar.style.width = pct + '%';
+    if (progressLbl) progressLbl.textContent = answered + ' / ' + TOTAL + ' réponses';
+
+    const allDone = (answered === TOTAL);
+    if (statusEl) {
+        statusEl.innerHTML = allDone
+            ? '<span class="raads-all-done">✓ Toutes les questions ont été répondues</span>'
+            : (TOTAL - answered) + ' réponse(s) manquante(s)';
+    }
+    if (submitBtn) {
+        submitBtn.disabled      = !allDone;
+        submitBtn.style.opacity = allDone ? '1' : '.5';
+        submitBtn.title         = allDone ? '' : 'Répondez à toutes les questions pour soumettre';
+    }
+
+    // Update item border highlights
+    document.querySelectorAll('.raads-item').forEach(card => {
+        card.classList.toggle('answered', !!card.querySelector('input[type=radio]:checked'));
+    });
+}
+
+/* ── Radio change → update visual selection + UI ── */
+document.addEventListener('change', e => {
+    if (e.target.type !== 'radio') return;
+    const card = e.target.closest('.raads-item');
+    if (!card) return;
+    card.querySelectorAll('.raads-opt').forEach(opt => opt.classList.remove('selected'));
+    const lbl = e.target.closest('.raads-opt');
+    if (lbl) lbl.classList.add('selected');
+    updateUI();
+});
+
+/* ── Autosave ── */
+function autosave() {
+    const answers = collectAnswers();
+    fetch(AUTOSAVE_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+        body:    JSON.stringify({ answers }),
+    })
+    .then(r => r.json())
+    .then(() => {
+        if (autosaveEl) {
+            autosaveEl.textContent = 'Sauvegardé à '
+                + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        }
+    })
+    .catch(() => {
+        if (autosaveEl) autosaveEl.textContent = 'Erreur de sauvegarde automatique';
+    });
+}
+
+if (!READ_ONLY) {
+    setInterval(autosave, 30000);
+    window.addEventListener('beforeunload', autosave);
+}
+
+/* ── Save button ── */
+if (saveBtn) saveBtn.addEventListener('click', () => {
+    autosave();
+    const answers = collectAnswers();
+    const fd      = new FormData();
+    fd.append('_token', CSRF_TOKEN);
+    fd.append('action', 'save');
+    Object.entries(answers).forEach(([k, v]) => fd.append('answers[' + k + ']', v));
+    fetch(SUBMIT_URL, { method: 'POST', body: fd }).then(() => {
+        if (autosaveEl) {
+            autosaveEl.textContent = 'Sauvegardé manuellement à '
+                + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        }
+    });
+});
+
+/* ── Submit button ── */
+if (submitBtn) submitBtn.addEventListener('click', () => {
+    if (!confirm(
+        'Confirmer la soumission définitive ?\n\nVous ne pourrez plus modifier vos réponses après validation.'
+    )) return;
+
+    hiddenCnt.innerHTML = '';
+    const answers = collectAnswers();
+    Object.entries(answers).forEach(([k, v]) => {
+        const inp = document.createElement('input');
+        inp.type  = 'hidden';
+        inp.name  = 'answers[' + k + ']';
+        inp.value = v;
+        hiddenCnt.appendChild(inp);
+    });
+    raadsForm.submit();
+});
+
+/* ── Init ── */
+updateUI();
+
+})();
+</script>
+{% endblock %}

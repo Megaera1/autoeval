@@ -331,8 +331,27 @@ class PatientController extends AbstractController
                 }
             }
 
+            // RAADS-R mode: compute sub-scores by sub-scale from clef answers
+            if ($action === 'complete' && !empty($questions['raads_mode'])) {
+                $subScores = [];
+                foreach ($questions['sous_echelles'] as $se) {
+                    $subScores[$se['id']] = 0;
+                }
+                foreach ($questions['items'] as $item) {
+                    $answer = $submittedAnswers[$item['id']] ?? null;
+                    if ($answer !== null && isset($item['scores'][$answer])) {
+                        $subScores[$item['sous_echelle']] = ($subScores[$item['sous_echelle']] ?? 0) + (int) $item['scores'][$answer];
+                    }
+                }
+                $total = array_sum($subScores);
+                foreach ($subScores as $seId => $seScore) {
+                    $submittedAnswers['_score_' . $seId] = $seScore;
+                }
+                $submittedAnswers['_score_total'] = $total;
+            }
+
             // Rich APMT format: compute sub-scores and embed them in answers
-            if ($action === 'complete' && isset($questions['sous_echelles'])) {
+            if ($action === 'complete' && isset($questions['sous_echelles']) && empty($questions['raads_mode'])) {
                 $hasOmissionCorrection = !empty($questions['omission_correction']);
                 $omissionDefaultScore  = isset($questions['omission_default_score'])
                     ? (float) $questions['omission_default_score']
@@ -389,9 +408,11 @@ class PatientController extends AbstractController
             ]);
         }
 
-        $template = !empty($questions['diva_mode'])
-            ? 'patient/diva_fill.html.twig'
-            : 'patient/questionnaire_fill.html.twig';
+        $template = !empty($questions['raads_mode'])
+            ? 'patient/raads_fill.html.twig'
+            : (!empty($questions['diva_mode'])
+                ? 'patient/diva_fill.html.twig'
+                : 'patient/questionnaire_fill.html.twig');
 
         return $this->render($template, [
             'questionnaire' => $questionnaire,
@@ -431,6 +452,11 @@ class PatientController extends AbstractController
                 }
             }
             return $total;
+        }
+
+        // RAADS-R mode: return pre-computed total
+        if (!empty($questions['raads_mode'])) {
+            return (float) ($answers['_score_total'] ?? 0);
         }
 
         // Rich format (HAD-like): sum all item answers

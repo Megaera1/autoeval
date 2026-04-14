@@ -316,6 +316,7 @@
                     {% set isParent = q.questions.parent_mode is defined and q.questions.parent_mode %}
                     {% set isAdolescent = q.questions.adolescent_mode is defined and q.questions.adolescent_mode %}
                     {% set isDiva = q.questions.diva_mode is defined and q.questions.diva_mode %}
+                    {% set isRaads = q.questions.raads_mode is defined and q.questions.raads_mode %}
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="heading-{{ i }}">
                             <button class="accordion-button {{ i > 0 ? 'collapsed' : '' }}"
@@ -338,6 +339,9 @@
                                     {% if isDiva %}
                                         <span class="badge" style="background:#ebf4ff;color:#2c5282;font-size:.7rem;">DIVA 2.0</span>
                                     {% endif %}
+                                    {% if isRaads %}
+                                        <span class="badge" style="background:#f3f0ff;color:#553c9a;font-size:.7rem;">RAADS-R</span>
+                                    {% endif %}
                                     {% if response.isComplete %}
                                         <span class="badge bg-success-lt text-success">Terminé</span>
                                     {% else %}
@@ -349,7 +353,7 @@
                                             <span class="badge bg-blue-lt text-blue" title="Âge du patient lors de la passation">{{ ageAtStart }} ans</span>
                                         {% endif %}
                                         {{ response.startedAt ? response.startedAt|date('d/m/Y') : '' }}
-                                        {% if response.score is not null and not isTeacher and not isParent and not isAdolescent and not isDiva %}
+                                        {% if response.score is not null and not isTeacher and not isParent and not isAdolescent and not isDiva and not isRaads %}
                                             — Score : <strong>{{ response.score }}</strong>
                                         {% endif %}
                                     </span>
@@ -1304,6 +1308,144 @@
                                         {% endfor %}
                                         </div>
                                     </div>
+
+                                    <div class="px-4 py-2 text-muted small d-flex gap-4 border-top">
+                                        <span>Commencé : {{ response.startedAt ? response.startedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                        <span>Terminé : {{ response.completedAt ? response.completedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                    </div>
+
+                                {# ══════════════════════════════════════════════
+                                   RAADS-R mode
+                                   ══════════════════════════════════════════════ #}
+                                {% elseif isRaads %}
+                                    {% set rAns = response.answers ?? {} %}
+                                    {% set rTotal = rAns['_score_total'] ?? null %}
+                                    {% set rSeuil = q.questions.scoring.seuil_total ?? 65 %}
+                                    {% set rMax   = q.questions.scoring.score_max   ?? 240 %}
+
+                                    {# Interpretation #}
+                                    {% set rInterp = null %}
+                                    {% set rNiveau = 'normal' %}
+                                    {% if rTotal is not null and q.questions.scoring.interpretations is defined %}
+                                        {% for rule in q.questions.scoring.interpretations %}
+                                            {% if rTotal >= rule.min and rTotal <= rule.max %}
+                                                {% set rInterp = rule.label %}
+                                                {% set rNiveau = rule.niveau %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+
+                                    {# Score banner #}
+                                    {% if response.isComplete and rTotal is not null %}
+                                    <div class="px-4 py-3 border-bottom">
+                                        <div class="d-flex align-items-center gap-4 flex-wrap">
+                                            <div>
+                                                <div class="text-muted small mb-1">Score total RAADS-R</div>
+                                                <div class="d-flex align-items-baseline gap-2">
+                                                    <span class="fw-bold fs-3" style="color:#553c9a;">{{ rTotal }}</span>
+                                                    <span class="text-muted">/ {{ rMax }}</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="text-muted small mb-1">Seuil TSA</div>
+                                                <span class="badge {% if rTotal >= rSeuil %}diva-threshold-warn{% else %}diva-threshold-ok{% endif %}">
+                                                    {% if rTotal >= rSeuil %}⚠ Seuil atteint (≥{{ rSeuil }}){% else %}✓ Sous le seuil ({{ rSeuil }}){% endif %}
+                                                </span>
+                                            </div>
+                                            {% if rInterp %}
+                                            <div>
+                                                <div class="text-muted small mb-1">Interprétation</div>
+                                                <span class="badge
+                                                    {% if rNiveau == 'normal' %}bg-success-lt text-success
+                                                    {% elseif rNiveau == 'possible' %}bg-warning-lt text-warning
+                                                    {% elseif rNiveau == 'probable' %}bg-orange-lt text-orange
+                                                    {% else %}bg-danger-lt text-danger{% endif %}"
+                                                    style="font-size:.82rem;white-space:normal;max-width:260px;">
+                                                    {{ rInterp }}
+                                                </span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {# Sub-score grid #}
+                                    {% if response.isComplete %}
+                                    <div class="px-4 py-3 border-bottom">
+                                        <h6 class="fw-bold mb-3" style="color:#553c9a;">Sous-scores par dimension</h6>
+                                        <div class="row g-3">
+                                            {% for se in q.questions.sous_echelles %}
+                                            {% set seScore = rAns['_score_' ~ se.id] ?? null %}
+                                            <div class="col-md-6">
+                                                <div class="diva-score-card h-100">
+                                                    <div class="fw-bold mb-2" style="color:#553c9a;">{{ se.label }}</div>
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <span class="text-muted small">Score brut</span>
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <span class="fw-bold">{{ seScore ?? '—' }} / {{ se.score_max }}</span>
+                                                            {% if seScore is not null %}
+                                                            <span class="badge small {% if seScore >= se.seuil %}diva-threshold-warn{% else %}diva-threshold-ok{% endif %}">
+                                                                {% if seScore >= se.seuil %}⚠ Seuil atteint (≥{{ se.seuil }}){% else %}✓ Sous le seuil{% endif %}
+                                                            </span>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    {% if seScore is not null and se.score_max > 0 %}
+                                                    <div class="ens-cluster-bar">
+                                                        <div class="ens-cluster-bar-fill {{ seScore >= se.seuil ? 'ens-score-high' : 'ens-score-low' }}"
+                                                             style="width:{{ (seScore / se.score_max * 100)|round }}%"></div>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {# Items table #}
+                                    {% set itemById = {} %}
+                                    {% for item in q.questions.items %}
+                                        {% set itemById = itemById|merge({(item.id): item}) %}
+                                    {% endfor %}
+                                    {% set optionLabels = {} %}
+                                    {% for opt in q.questions.options %}
+                                        {% set optionLabels = optionLabels|merge({(opt.clef): opt.short}) %}
+                                    {% endfor %}
+
+                                    {% for se in q.questions.sous_echelles %}
+                                    <div class="px-4 pt-3">
+                                        <h6 class="fw-semibold mb-2" style="color:#553c9a;">{{ se.label }}
+                                            <span class="text-muted fw-normal small">({{ se.items_ids|length }} items)</span>
+                                        </h6>
+                                    </div>
+                                    <table class="table table-sm table-vcenter mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width:3rem;">#</th>
+                                                <th>Affirmation</th>
+                                                <th>Réponse</th>
+                                                <th class="text-center" style="width:4rem;">Score</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for itemId in se.items_ids %}
+                                            {% set item = itemById[itemId] ?? null %}
+                                            {% if item %}
+                                            {% set rawAns   = rAns[item.id] ?? null %}
+                                            {% set ansLabel = rawAns is not null ? (optionLabels[rawAns] ?? rawAns) : '—' %}
+                                            {% set itemScore = rawAns is not null and item.scores[rawAns] is defined ? item.scores[rawAns] : '—' %}
+                                            <tr>
+                                                <td class="text-muted">{{ item.ordre_affichage }}</td>
+                                                <td class="small">{{ item.texte }}</td>
+                                                <td class="small">{{ ansLabel }}</td>
+                                                <td class="text-center fw-bold {{ itemScore != '—' and itemScore > 0 ? 'text-danger' : (itemScore == 0 ? 'text-muted' : '') }}">{{ itemScore }}</td>
+                                            </tr>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    {% endfor %}
 
                                     <div class="px-4 py-2 text-muted small d-flex gap-4 border-top">
                                         <span>Commencé : {{ response.startedAt ? response.startedAt|date('d/m/Y à H:i') : '—' }}</span>
