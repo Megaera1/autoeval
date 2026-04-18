@@ -33,15 +33,31 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     /** @return User[] */
     public function findAllPatients(): array
     {
-        $all = $this->createQueryBuilder('u')
-            ->orderBy('u.createdAt', 'DESC')
-            ->getQuery()
-            ->getResult();
+        return $this->findPatientsBySearch('');
+    }
 
-        return array_values(array_filter(
-            $all,
-            static fn(User $u) => in_array('ROLE_PATIENT', $u->getRoles(), true)
-                && !in_array('ROLE_NEUROPSYCHOLOGUE', $u->getRoles(), true),
-        ));
+    /** @return User[] */
+    public function findPatientsBySearch(string $search, string $sort = 'date_desc'): array
+    {
+        $qb = $this->createQueryBuilder('u')
+            ->where('u.roles LIKE :role')
+            ->setParameter('role', '%ROLE_PATIENT%')
+            ->andWhere('u.roles NOT LIKE :adminRole')
+            ->setParameter('adminRole', '%ROLE_NEUROPSYCHOLOGUE%');
+
+        if ($search !== '') {
+            $q = '%' . mb_strtolower($search) . '%';
+            $qb->andWhere('LOWER(u.firstName) LIKE :q OR LOWER(u.lastName) LIKE :q OR LOWER(u.email) LIKE :q')
+               ->setParameter('q', $q);
+        }
+
+        match ($sort) {
+            'name_asc'  => $qb->orderBy('u.lastName', 'ASC')->addOrderBy('u.firstName', 'ASC'),
+            'name_desc' => $qb->orderBy('u.lastName', 'DESC')->addOrderBy('u.firstName', 'DESC'),
+            'date_asc'  => $qb->orderBy('u.createdAt', 'ASC'),
+            default     => $qb->orderBy('u.createdAt', 'DESC'),
+        };
+
+        return $qb->getQuery()->getResult();
     }
 }

@@ -1,0 +1,23 @@
+Nouvelle inscription patient — AutoEval
+=======================================
+
+Un nouveau patient vient de créer son compte sur AutoEval.
+
+
+INFORMATIONS DU PATIENT
+------------------------
+Nom            : {{ patient.lastName }}
+Prénom         : {{ patient.firstName }}
+Email          : {{ patient.email }}
+Âge            : {% if patient.age is not null %}{{ patient.age }} ans{% else %}Non renseigné{% endif %}
+
+Date d'inscription : {{ patient.createdAt ? patient.createdAt|date('d/m/Y à H:i') : '—' }}
+
+
+ACCÉDER AU DOSSIER
+------------------------
+{{ absolute_url(path('app_admin_patient_profile', {id: patient.id})) }}
+
+
+AutoEval © {{ "now"|date("Y") }} — Usage clinique exclusif
+Cet email est envoyé automatiquement, merci de ne pas y répondre.

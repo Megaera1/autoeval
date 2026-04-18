@@ -3,14 +3,14 @@
 {% block title %}Mes questionnaires — AutoEval{% endblock %}
 
 {% block navbar %}
-<header class="navbar navbar-expand-md navbar-dark bg-blue-lt d-print-none">
+<header class="navbar navbar-expand-md navbar-patient d-print-none">
     <div class="container-xl">
         <a href="{{ path('app_home') }}" class="navbar-brand navbar-brand-autodark">
             <strong>AutoEval</strong>
         </a>
         <div class="navbar-nav ms-auto d-flex align-items-center gap-3">
             <span class="text-white">{{ app.user.firstName }}</span>
-            <a href="{{ path('app_logout') }}" class="btn btn-outline-light btn-sm">Déconnexion</a>
+            <a href="{{ path('app_logout') }}" class="btn btn-primary btn-sm">Déconnexion</a>
         </div>
     </div>
 </header>

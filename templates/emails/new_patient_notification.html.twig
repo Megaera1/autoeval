@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouvelle inscription patient — AutoEval</title>
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background-color: #f4f6fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #333333;
+        }
+        .wrapper {
+            max-width: 580px; margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .header {
+            background-color: #1e40af;
+            padding: 32px 40px; text-align: center;
+        }
+        .header h1 { margin: 12px 0 0; color: #ffffff; font-size: 20px; font-weight: 700; }
+        .header p  { margin: 4px 0 0; color: rgba(255,255,255,0.8); font-size: 13px; }
+        .body { padding: 36px 40px; }
+        .body p { font-size: 15px; line-height: 1.6; margin: 0 0 16px; color: #444444; }
+        h2 {
+            font-size: 16px; font-weight: 700; color: #1a1a2e;
+            margin: 28px 0 12px; padding-bottom: 8px;
+            border-bottom: 2px solid #e8f0fc;
+        }
+        .info-box {
+            background-color: #f0f5ff; border: 1px solid #c5d8fa;
+            border-radius: 8px; padding: 20px 24px; margin: 0 0 20px;
+        }
+        .info-box table { width: 100%; border-collapse: collapse; }
+        .info-box td { padding: 6px 0; font-size: 14px; }
+        .info-box td:first-child { color: #666; width: 140px; font-weight: 600; }
+        .info-box td:last-child  { color: #1a1a2e; font-weight: 700; }
+        .btn-wrapper { text-align: center; margin: 32px 0 8px; }
+        .btn {
+            display: inline-block; background-color: #1e40af;
+            color: #ffffff !important; text-decoration: none;
+            padding: 14px 32px; border-radius: 8px;
+            font-size: 15px; font-weight: 700; letter-spacing: 0.3px;
+        }
+        .footer {
+            background-color: #f8fafc; border-top: 1px solid #e2e8f0;
+            padding: 20px 40px; text-align: center;
+            font-size: 12px; color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="header">
+        <h1>Nouvelle inscription patient</h1>
+        <p>AutoEval — Notification automatique</p>
+    </div>
+    <div class="body">
+        <p>Un nouveau patient vient de créer son compte sur AutoEval.</p>
+
+        <h2>Informations du patient</h2>
+        <div class="info-box">
+            <table>
+                <tr>
+                    <td>Nom</td>
+                    <td>{{ patient.lastName }}</td>
+                </tr>
+                <tr>
+                    <td>Prénom</td>
+                    <td>{{ patient.firstName }}</td>
+                </tr>
+                <tr>
+                    <td>Email</td>
+                    <td>{{ patient.email }}</td>
+                </tr>
+                <tr>
+                    <td>Âge</td>
+                    <td>{% if patient.age is not null %}{{ patient.age }} ans{% else %}Non renseigné{% endif %}</td>
+                </tr>
+                <tr>
+                    <td>Date d'inscription</td>
+                    <td>{{ patient.createdAt ? patient.createdAt|date('d/m/Y à H:i') : '—' }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <p>Accédez au dossier patient pour lui assigner des questionnaires.</p>
+
+        <div class="btn-wrapper">
+            <a href="{{ absolute_url(path('app_admin_patient_profile', {id: patient.id})) }}" class="btn">
+                Voir le dossier patient
+            </a>
+        </div>
+    </div>
+    <div class="footer">
+        AutoEval © {{ "now"|date("Y") }} — Usage clinique exclusif<br>
+        Cet email est envoyé automatiquement, merci de ne pas y répondre.
+    </div>
+</div>
+</body>
+</html>

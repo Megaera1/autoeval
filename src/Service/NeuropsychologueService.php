@@ -65,21 +65,14 @@ class NeuropsychologueService
         return $map;
     }
 
-    /** @return array<int, array{patient: User, anamnesis: ?\App\Entity\Anamnesis, completedResponseCount: int}> */
-    public function getAllPatients(): array
+    /** @return array<int, array{patient: User}> */
+    public function getAllPatients(string $search = '', string $sort = 'date_desc'): array
     {
-        $patients = $this->userRepository->findAllPatients();
+        $patients = $this->userRepository->findPatientsBySearch($search, $sort);
         $result = [];
 
         foreach ($patients as $patient) {
-            $anamnesis = $this->anamnesisRepository->findOneBy(['patient' => $patient]);
-            $completedCount = $this->responseRepository->count(['patient' => $patient, 'isComplete' => true]);
-
-            $result[] = [
-                'patient'               => $patient,
-                'anamnesis'             => $anamnesis,
-                'completedResponseCount'=> $completedCount,
-            ];
+            $result[] = ['patient' => $patient];
         }
 
         return $result;

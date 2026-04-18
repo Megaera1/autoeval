@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votre questionnaire — AutoEval</title>
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background-color: #f4f6fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #333333;
+        }
+        .wrapper {
+            max-width: 580px; margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .header {
+            background-color: #1e40af;
+            padding: 32px 40px; text-align: center;
+        }
+        .header h1 { margin: 12px 0 0; color: #ffffff; font-size: 20px; font-weight: 700; }
+        .header p  { margin: 4px 0 0; color: rgba(255,255,255,0.8); font-size: 13px; }
+        .body { padding: 36px 40px; }
+        .body p { font-size: 15px; line-height: 1.6; margin: 0 0 16px; color: #444444; }
+        .highlight {
+            background-color: #f0f5ff; border: 1px solid #c5d8fa;
+            border-radius: 8px; padding: 16px 20px; margin: 20px 0;
+            font-size: 15px; font-weight: 600; color: #1e40af;
+        }
+        .footer {
+            background-color: #f8fafc; border-top: 1px solid #e2e8f0;
+            padding: 20px 40px; text-align: center;
+            font-size: 12px; color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="header">
+        <h1>AutoEval</h1>
+        <p>Espace neuropsychologique</p>
+    </div>
+    <div class="body">
+        <p>Bonjour {{ patient.firstName }},</p>
+        <p>
+            Votre neuropsychologue vous envoie le questionnaire suivant en pièce jointe :
+        </p>
+        <div class="highlight">
+            📄 {{ questionnaire.title }}
+        </div>
+        <p>
+            Vous trouverez le document PDF directement joint à cet email.
+            Si vous avez des questions, contactez directement votre cabinet.
+        </p>
+        <p>Cordialement,<br><strong>L'équipe AutoEval</strong></p>
+    </div>
+    <div class="footer">
+        AutoEval © {{ "now"|date("Y") }} — Usage clinique exclusif<br>
+        Cet email est envoyé automatiquement, merci de ne pas y répondre.
+    </div>
+</div>
+</body>
+</html>

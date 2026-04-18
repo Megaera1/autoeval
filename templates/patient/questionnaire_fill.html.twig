@@ -3,7 +3,7 @@
 {% block title %}{{ questionnaire.title }} — AutoEval{% endblock %}
 
 {% block navbar %}
-<header class="navbar navbar-expand-md navbar-dark bg-blue-lt d-print-none">
+<header class="navbar navbar-expand-md navbar-patient d-print-none">
     <div class="container-xl">
         <a href="{{ path('app_home') }}" class="navbar-brand navbar-brand-autodark">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brain me-2" width="28" height="28" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -19,7 +19,7 @@
         </a>
         <div class="navbar-nav ms-auto d-flex align-items-center gap-3">
             <span class="text-white">{{ app.user.firstName }}</span>
-            <a href="{{ path('app_logout') }}" class="btn btn-outline-light btn-sm">Déconnexion</a>
+            <a href="{{ path('app_logout') }}" class="btn btn-primary btn-sm">Déconnexion</a>
         </div>
     </div>
 </header>

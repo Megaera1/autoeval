@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\RegistrationFormType;
 use App\Security\LoginSuccessHandler;
+use App\Service\AdminNotificationService;
 use App\Service\WelcomeMailService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -24,6 +25,7 @@ class RegistrationController extends AbstractController
         EntityManagerInterface $entityManager,
         Security $security,
         WelcomeMailService $welcomeMailService,
+        AdminNotificationService $adminNotificationService,
         LoggerInterface $logger,
     ): Response {
         if ($this->getUser()) {
@@ -49,6 +51,15 @@ class RegistrationController extends AbstractController
                 $welcomeMailService->sendWelcomeMail($user, $plainPassword);
             } catch (\Throwable $e) {
                 $logger->error('Échec de l\'envoi de l\'email de bienvenue pour {email} : {message}', [
+                    'email' => $user->getEmail(),
+                    'message' => $e->getMessage(),
+                ]);
+            }
+
+            try {
+                $adminNotificationService->sendNewPatientNotification($user);
+            } catch (\Throwable $e) {
+                $logger->error('Échec de la notification admin pour le patient {email} : {message}', [
                     'email' => $user->getEmail(),
                     'message' => $e->getMessage(),
                 ]);

@@ -5,3 +5,25 @@
 
 .card { border-radius: 12px; }
 .btn-primary { background-color: var(--tblr-primary); }
+
+.navbar-patient {
+    background-color: #1e40af;
+}
+.navbar-patient .nav-link,
+.navbar-patient .btn,
+.navbar-patient .navbar-brand {
+    color: #ffffff !important;
+}
+.navbar-patient .nav-link:hover {
+    color: #cbd5e1 !important;
+}
+.navbar-patient .btn-primary {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+    color: #ffffff;
+}
+.navbar-patient .btn-primary:hover {
+    background-color: #1e3a8a;
+    border-color: #1e3a8a;
+    color: #ffffff;
+}

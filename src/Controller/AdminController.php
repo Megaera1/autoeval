@@ -2,11 +2,14 @@
 
 namespace App\Controller;
 
+use App\Entity\Questionnaire;
 use App\Entity\User;
 use App\Form\AdminPatientCredentialsFormType;
+use App\Repository\QuestionnaireRepository;
 use App\Repository\UserRepository;
 use App\Service\AssignmentNotificationService;
 use App\Service\NeuropsychologueService;
+use App\Service\QuestionnairePdfMailService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -32,11 +35,19 @@ class AdminController extends AbstractController
     }
 
     #[Route('/dashboard', name: 'app_admin_dashboard')]
-    public function dashboard(): Response
+    public function dashboard(Request $request): Response
     {
+        $search = trim($request->query->get('search', ''));
+        $sort   = $request->query->get('sort', 'date_desc');
+        if (!in_array($sort, ['date_desc', 'date_asc', 'name_asc', 'name_desc'], true)) {
+            $sort = 'date_desc';
+        }
+
         return $this->render('admin/dashboard.html.twig', [
-            'patientRows' => $this->neuropsychologueService->getAllPatients(),
+            'patientRows' => $this->neuropsychologueService->getAllPatients($search, $sort),
             'stats'       => $this->neuropsychologueService->getStats(),
+            'search'      => $search,
+            'sort'        => $sort,
         ]);
     }
 
@@ -170,6 +181,45 @@ class AdminController extends AbstractController
         $this->addFlash('success', 'Le compte du patient et toutes ses données ont été supprimés définitivement.');
 
         return $this->redirectToRoute('app_admin_dashboard');
+    }
+
+    #[Route('/patient/{id}/questionnaire/{questionnaireId}/send-pdf', name: 'app_admin_send_questionnaire_pdf', methods: ['POST'], requirements: ['id' => '\d+', 'questionnaireId' => '\d+'])]
+    public function sendQuestionnairePdf(int $id, int $questionnaireId, Request $request, UserRepository $userRepository, QuestionnaireRepository $questionnaireRepository, QuestionnairePdfMailService $pdfMailService, CsrfTokenManagerInterface $csrfTokenManager): Response
+    {
+        if (!$csrfTokenManager->isTokenValid(new CsrfToken('send-pdf-' . $questionnaireId, $request->request->get('_token')))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
+        }
+
+        $patient = $userRepository->find($id);
+        if (!$patient) {
+            throw $this->createNotFoundException('Patient introuvable.');
+        }
+
+        $questionnaire = $questionnaireRepository->find($questionnaireId);
+        if (!$questionnaire) {
+            throw $this->createNotFoundException('Questionnaire introuvable.');
+        }
+
+        try {
+            $pdfMailService->sendQuestionnairePdf($patient, $questionnaire);
+            $this->addFlash('success', sprintf(
+                'Le PDF du questionnaire "%s" a été envoyé à %s.',
+                $questionnaire->getTitle(),
+                $patient->getEmail(),
+            ));
+        } catch (\Throwable $e) {
+            $this->logger->error('Échec envoi PDF questionnaire {q} pour {email} : {message}', [
+                'q'       => $questionnaire->getSlug(),
+                'email'   => $patient->getEmail(),
+                'message' => $e->getMessage(),
+            ]);
+            $this->addFlash('danger', sprintf(
+                'Impossible d\'envoyer le PDF : %s',
+                $e->getMessage(),
+            ));
+        }
+
+        return $this->redirectToRoute('app_admin_patient_profile', ['id' => $id]);
     }
 
     #[Route('/patient/{id}/export', name: 'app_admin_patient_export', requirements: ['id' => '\d+'])]
