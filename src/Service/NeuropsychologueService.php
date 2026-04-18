@@ -78,22 +78,6 @@ class NeuropsychologueService
         return $result;
     }
 
-    /** @return array{totalPatients: int, totalResponses: int, pctAnamneses: int} */
-    public function getStats(): array
-    {
-        $totalPatients   = count($this->userRepository->findAllPatients());
-        $totalResponses  = $this->responseRepository->count(['isComplete' => true]);
-        $totalAnamneses  = $this->anamnesisRepository->count([]);
-        $completeAnamneses = $this->anamnesisRepository->count(['isComplete' => true]);
-        $pctAnamneses    = $totalAnamneses > 0 ? (int) round($completeAnamneses / $totalAnamneses * 100) : 0;
-
-        return [
-            'totalPatients'  => $totalPatients,
-            'totalResponses' => $totalResponses,
-            'pctAnamneses'   => $pctAnamneses,
-        ];
-    }
-
     /**
      * @return array{patient: User, anamnesis: ?\App\Entity\Anamnesis, responses: array, anamnesisLabels: array, anamnesisDefinition: ?array, questionnairesGrouped: array, assignedIds: int[]}
      */
@@ -132,14 +116,45 @@ class NeuropsychologueService
             }
         }
 
+        $anamnesisProgress = $this->calculateAnamnesisProgress($anamnesis, $anamnesisDefinition);
+
         return [
             'patient'               => $patient,
             'anamnesis'             => $anamnesis,
             'responses'             => $responses,
             'anamnesisLabels'       => self::ANAMNESIS_LABELS,
             'anamnesisDefinition'   => $anamnesisDefinition,
+            'anamnesisProgress'     => $anamnesisProgress,
             'questionnairesGrouped' => $questionnairesGrouped,
             'assignedIds'           => $assignedIds,
+        ];
+    }
+
+    public function calculateAnamnesisProgress(?object $anamnesis, ?array $anamnesisDefinition): array
+    {
+        if (!$anamnesis || !$anamnesisDefinition) {
+            return ['filled' => 0, 'total' => 0, 'percent' => 0];
+        }
+
+        $data        = $anamnesis->getData() ?? [];
+        $totalFields = 0;
+        $filled      = 0;
+
+        foreach ($anamnesisDefinition['sections'] ?? [] as $section) {
+            foreach ($section['fields'] ?? [] as $field) {
+                $totalFields++;
+                $key   = $field['id'] ?? $field['name'] ?? null;
+                $value = $key !== null ? ($data[$key] ?? null) : null;
+                if ($value !== null && $value !== '' && (!is_string($value) || trim($value) !== '')) {
+                    $filled++;
+                }
+            }
+        }
+
+        return [
+            'filled'  => $filled,
+            'total'   => $totalFields,
+            'percent' => $totalFields > 0 ? (int) round($filled / $totalFields * 100) : 0,
         ];
     }
 

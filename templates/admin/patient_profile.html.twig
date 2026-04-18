@@ -267,6 +267,22 @@
     </div>
     <div class="card-body">
         {% if anamnesis and anamnesis.data is not empty %}
+            {% if anamnesisProgress.total > 0 %}
+            <div class="mb-3">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="text-muted">Champs remplis : {{ anamnesisProgress.filled }} / {{ anamnesisProgress.total }}</span>
+                    <span class="fw-semibold">{{ anamnesisProgress.percent }} %</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar {% if anamnesisProgress.percent < 33 %}bg-danger{% elseif anamnesisProgress.percent < 66 %}bg-warning{% else %}bg-success{% endif %}"
+                         style="width: {{ anamnesisProgress.percent }}%"
+                         role="progressbar"
+                         aria-valuenow="{{ anamnesisProgress.percent }}"
+                         aria-valuemin="0" aria-valuemax="100">
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             <div class="d-flex align-items-center gap-3 mb-3">
                 {% if anamnesisDefinition %}
                     <span class="badge bg-blue-lt text-blue">

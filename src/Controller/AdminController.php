@@ -45,7 +45,6 @@ class AdminController extends AbstractController
 
         return $this->render('admin/dashboard.html.twig', [
             'patientRows' => $this->neuropsychologueService->getAllPatients($search, $sort),
-            'stats'       => $this->neuropsychologueService->getStats(),
             'search'      => $search,
             'sort'        => $sort,
         ]);
