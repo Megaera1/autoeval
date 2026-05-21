@@ -93,11 +93,6 @@ class PatientService
                 continue;
             }
 
-            $inProgress = $this->responseRepository->findOneBy(
-                ['patient' => $user, 'questionnaire' => $questionnaire, 'isComplete' => false],
-                ['startedAt' => 'DESC']
-            );
-
             $responses = $this->responseRepository->findBy(
                 ['patient' => $user, 'questionnaire' => $questionnaire],
                 ['startedAt' => 'DESC']
@@ -105,7 +100,7 @@ class PatientService
 
             $result[] = [
                 'questionnaire' => $questionnaire,
-                'inProgress'    => $inProgress,
+                'inProgress'    => $this->findResumableResponse($user, $questionnaire),
                 'responses'     => $responses,
             ];
         }
@@ -114,27 +109,72 @@ class PatientService
     }
 
     /**
-     * Returns the latest in-progress response, or creates a fresh one.
+     * Returns the most recent in-progress response that actually contains at least one
+     * real item answer (i.e. is genuinely "resumable"). Empty rows (no item answer yet)
+     * are ignored so they never appear as "En cours / Reprendre".
      */
-    public function getOrCreateResponse(User $user, Questionnaire $questionnaire): QuestionnaireResponse
+    public function findResumableResponse(User $user, Questionnaire $questionnaire): ?QuestionnaireResponse
     {
-        $response = $this->responseRepository->findOneBy(
+        $candidates = $this->responseRepository->findBy(
             ['patient' => $user, 'questionnaire' => $questionnaire, 'isComplete' => false],
             ['startedAt' => 'DESC']
         );
 
-        if (!$response) {
-            $response = $this->createNewResponse($user, $questionnaire);
+        foreach ($candidates as $candidate) {
+            if (self::hasRealAnswers($candidate->getAnswers())) {
+                return $candidate;
+            }
         }
 
-        return $response;
+        return null;
     }
 
     /**
-     * Always creates a brand-new blank response (ignores any in-progress ones).
+     * Returns the most recent empty in-progress response for this couple — used to
+     * recycle a phantom row instead of stacking a new one on top.
+     */
+    private function findEmptyResponse(User $user, Questionnaire $questionnaire): ?QuestionnaireResponse
+    {
+        $candidates = $this->responseRepository->findBy(
+            ['patient' => $user, 'questionnaire' => $questionnaire, 'isComplete' => false],
+            ['startedAt' => 'DESC']
+        );
+
+        foreach ($candidates as $candidate) {
+            if (!self::hasRealAnswers($candidate->getAnswers())) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the response to load when the patient resumes work on a questionnaire.
+     * Order of preference:
+     *   1. an existing resumable (non-empty in-progress) response,
+     *   2. an existing empty in-progress row that can be reused (avoids stacking phantoms),
+     *   3. a brand-new response.
+     */
+    public function getOrCreateResponse(User $user, Questionnaire $questionnaire): QuestionnaireResponse
+    {
+        return $this->findResumableResponse($user, $questionnaire)
+            ?? $this->findEmptyResponse($user, $questionnaire)
+            ?? $this->createNewResponse($user, $questionnaire);
+    }
+
+    /**
+     * Starts a fresh passation. To avoid stacking empty "phantom" rows when the user
+     * clicks « + Nouvelle passation » without ever filling the previous attempt, an
+     * existing empty in-progress row for this couple is recycled if present.
      */
     public function createNewResponse(User $user, Questionnaire $questionnaire): QuestionnaireResponse
     {
+        $empty = $this->findEmptyResponse($user, $questionnaire);
+        if ($empty) {
+            return $empty;
+        }
+
         $response = new QuestionnaireResponse();
         $response->setPatient($user);
         $response->setQuestionnaire($questionnaire);
@@ -142,6 +182,40 @@ class PatientService
         $this->em->flush();
 
         return $response;
+    }
+
+    /**
+     * A response is considered "real" (resumable) as soon as it contains at least one
+     * item answer. Keys prefixed with "_" are reserved for meta data and scores:
+     *   - "_meta_*"  → header / evaluator fields filled before any item (parent_mode,
+     *                  teacher_mode, info_fields). Present alone does NOT mean the
+     *                  patient/evaluator has started answering items.
+     *   - "_score_*" → sub-scale and total scores written by the controller at
+     *                  submission time. Never present on a still-in-progress row.
+     * Item answers (HAD: "A1"/"D1", Brown: "1".."58", DIVA: "<id>_adult"/"<id>_child",
+     * RAADS: item.id) never start with "_", so any non-underscore key with a non-empty
+     * value indicates a real answer.
+     *
+     * Public + static so other services can share the same "vide vs partiel" definition
+     * (e.g. NeuropsychologueService when an admin deletes an incomplete passation).
+     */
+    public static function hasRealAnswers(?array $answers): bool
+    {
+        if (!$answers) {
+            return false;
+        }
+
+        foreach ($answers as $key => $value) {
+            if (is_string($key) && str_starts_with($key, '_')) {
+                continue;
+            }
+            if ($value === null || $value === '' || $value === []) {
+                continue;
+            }
+            return true;
+        }
+
+        return false;
     }
 
     public function getResponseHistory(User $user, Questionnaire $questionnaire): array

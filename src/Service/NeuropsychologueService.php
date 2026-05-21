@@ -9,7 +9,10 @@ use App\Repository\AssignedQuestionnaireRepository;
 use App\Repository\QuestionnaireRepository;
 use App\Repository\QuestionnaireResponseRepository;
 use App\Repository\UserRepository;
+use App\Service\PatientService;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 class NeuropsychologueService
@@ -37,6 +40,7 @@ class NeuropsychologueService
         private QuestionnaireRepository $questionnaireRepository,
         private AssignedQuestionnaireRepository $assignedQuestionnaireRepository,
         #[Autowire('%kernel.project_dir%')] private string $projectDir = '',
+        private LoggerInterface $logger = new NullLogger(),
     ) {
     }
 
@@ -195,6 +199,51 @@ class NeuropsychologueService
         $this->em->flush();
 
         return $newlyAssigned;
+    }
+
+    /**
+     * Deletes a single QuestionnaireResponse that the neuropsychologist judged worth
+     * removing — typically a phantom row (answers = "[]") or a passation started by
+     * mistake. Only incomplete rows are eligible: completed passations contain real
+     * clinical data and must not be erased through this code path (use the full
+     * patient-account deletion flow if RGPD erasure is required).
+     *
+     * Guards (defense in depth — the controller already CSRF-checks and the template
+     * never renders the button for completed rows):
+     *   1. response exists
+     *   2. response belongs to the patient {patientId} in the URL  (anti-IDOR)
+     *   3. response.isComplete === false
+     *
+     * Logs the deletion with patient/questionnaire/state info; the controller logs
+     * the actor separately.
+     */
+    public function deleteIncompleteResponse(int $patientId, int $responseId): void
+    {
+        $response = $this->responseRepository->find($responseId);
+        if (!$response) {
+            throw new \LogicException('Passation introuvable.');
+        }
+
+        if ($response->getPatient()?->getId() !== $patientId) {
+            throw new \LogicException('Cette passation n\'appartient pas à ce patient.');
+        }
+
+        if ($response->isComplete()) {
+            throw new \LogicException('Impossible de supprimer une passation terminée via cette méthode.');
+        }
+
+        $state = PatientService::hasRealAnswers($response->getAnswers()) ? 'partiel' : 'vide';
+        $questionnaire = $response->getQuestionnaire();
+
+        $this->em->remove($response);
+        $this->em->flush();
+
+        $this->logger->info('Passation incomplète #{responseId} (questionnaire={slug}, patient #{patientId}, état={state}) supprimée', [
+            'responseId' => $responseId,
+            'slug'       => $questionnaire?->getSlug() ?? '?',
+            'patientId'  => $patientId,
+            'state'      => $state,
+        ]);
     }
 
     public function deletePatientAccount(User $patient): void

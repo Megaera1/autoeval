@@ -182,6 +182,32 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('app_admin_dashboard');
     }
 
+    #[Route('/patient/{id}/response/{responseId}/delete', name: 'app_admin_delete_response', methods: ['POST'], requirements: ['id' => '\d+', 'responseId' => '\d+'])]
+    public function deleteResponse(int $id, int $responseId, Request $request, CsrfTokenManagerInterface $csrfTokenManager): Response
+    {
+        if (!$csrfTokenManager->isTokenValid(new CsrfToken('delete-response-' . $responseId, $request->request->get('_token')))) {
+            throw $this->createAccessDeniedException('Token CSRF invalide.');
+        }
+
+        try {
+            $this->neuropsychologueService->deleteIncompleteResponse($id, $responseId);
+
+            /** @var User $admin */
+            $admin = $this->getUser();
+            $this->logger->info('Passation #{responseId} (patient #{patientId}) supprimée par neuropsychologue #{adminId}', [
+                'responseId' => $responseId,
+                'patientId'  => $id,
+                'adminId'    => $admin->getId(),
+            ]);
+
+            $this->addFlash('success', 'La passation incomplète a été supprimée.');
+        } catch (\LogicException $e) {
+            $this->addFlash('danger', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('app_admin_patient_profile', ['id' => $id]);
+    }
+
     #[Route('/patient/{id}/questionnaire/{questionnaireId}/send-pdf', name: 'app_admin_send_questionnaire_pdf', methods: ['POST'], requirements: ['id' => '\d+', 'questionnaireId' => '\d+'])]
     public function sendQuestionnairePdf(int $id, int $questionnaireId, Request $request, UserRepository $userRepository, QuestionnaireRepository $questionnaireRepository, QuestionnairePdfMailService $pdfMailService, CsrfTokenManagerInterface $csrfTokenManager): Response
     {
