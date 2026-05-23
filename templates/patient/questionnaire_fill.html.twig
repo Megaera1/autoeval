@@ -185,40 +185,16 @@
     </div>
     <div class="card-body">
         <div class="row g-3">
-            {# Évaluateur #}
+            {# Nom du répondant — seul champ d'en-tête conservé (clé _meta_evaluateur inchangée) #}
             <div class="col-md-6">
-                <label class="form-label fw-semibold" for="meta_evaluateur">Nom de l'évaluateur <span class="text-danger">*</span></label>
+                <label class="form-label fw-semibold" for="meta_evaluateur">Nom du répondant <span class="text-danger">*</span></label>
                 <input type="text" id="meta_evaluateur" class="form-control teacher-meta-required"
                        form="questionnaire-form"
                        name="answers[_meta_evaluateur]"
                        value="{{ response.answers['_meta_evaluateur'] ?? '' }}"
-                       aria-label="Nom de l'évaluateur (enseignant)" aria-required="true"
+                       aria-label="Nom du répondant" aria-required="true"
+                       placeholder="Prénom Nom"
                        autocomplete="off">
-            </div>
-
-            {# Durée de connaissance #}
-            <div class="col-md-6">
-                <label class="form-label fw-semibold d-block">Depuis combien de temps connaissez-vous cet élève ? <span class="text-danger">*</span></label>
-                {% set curDuree = response.answers['_meta_duree_connaissance'] ?? '' %}
-                <div class="d-flex flex-wrap gap-3 mt-1">
-                    {% for durVal, durLabel in {
-                        'moins_1_mois': "Moins d'un mois",
-                        '1_2_mois': '1 à 2 mois',
-                        '3_5_mois': '3 à 5 mois',
-                        '6_11_mois': '6 à 11 mois',
-                        '12_mois_plus': '12 mois ou plus'
-                    } %}
-                    <label class="form-check">
-                        <input class="form-check-input teacher-meta-required" type="radio"
-                               form="questionnaire-form"
-                               name="answers[_meta_duree_connaissance]"
-                               value="{{ durVal }}"
-                               {{ curDuree == durVal ? 'checked' : '' }}
-                               aria-label="{{ durLabel }}">
-                        <span class="form-check-label">{{ durLabel }}</span>
-                    </label>
-                    {% endfor %}
-                </div>
             </div>
         </div>
     </div>
@@ -737,10 +713,27 @@ function updateTeacherUI() {
     if (bar)       bar.style.width = pct + '%';
     if (progLabel) progLabel.textContent = answered + ' / ' + total + ' réponses';
 
-    /* Check required header fields */
-    const evaluateurEl = document.querySelector('[name="answers[_meta_evaluateur]"]');
-    const dureeChecked = document.querySelector('[name="answers[_meta_duree_connaissance]"]:checked');
-    const allHeaderFilled = (evaluateurEl && evaluateurEl.value.trim() !== '') && !!dureeChecked;
+    /* Check required header fields.
+       Generic: enumerate every .teacher-meta-required input (the class is set
+       on each required header field in the teacher_mode block). Group by name
+       so a radio group counts once, and validate per group: radio = at least
+       one checked, text/date = value non-empty. Same algorithm as
+       updateParentUI — kept hardcoded-free so removing/adding fields in the
+       HTML doesn't require touching this function. */
+    let allHeaderFilled = true;
+    const requiredGroups = {};
+    document.querySelectorAll('.teacher-meta-required').forEach(el => {
+        if (!el.name) return;
+        (requiredGroups[el.name] = requiredGroups[el.name] || []).push(el);
+    });
+    for (const name in requiredGroups) {
+        const els = requiredGroups[name];
+        const isRadio = els[0].type === 'radio';
+        const ok = isRadio
+            ? els.some(el => el.checked)
+            : els.some(el => (el.value || '').trim() !== '');
+        if (!ok) { allHeaderFilled = false; break; }
+    }
 
     const allDone = (answered === total) && allHeaderFilled;
 
@@ -1092,19 +1085,26 @@ function updateParentUI() {
     if (bar)       bar.style.width = pct + '%';
     if (progLabel) progLabel.textContent = answered + ' / ' + total + ' réponses';
 
-    /* Check required header fields */
-    const prenomEl   = document.querySelector('[name="answers[_meta_evaluateur_prenom]"]');
-    const nomEl      = document.querySelector('[name="answers[_meta_evaluateur_nom]"]');
-    const lienChecked = document.querySelector('[name="answers[_meta_lien]"]:checked');
-    const enfantPrenomEl = document.querySelector('[name="answers[_meta_enfant_prenom]"]');
-    const enfantNomEl    = document.querySelector('[name="answers[_meta_enfant_nom]"]');
-
-    const allHeaderFilled =
-        (prenomEl && prenomEl.value.trim() !== '') &&
-        (nomEl && nomEl.value.trim() !== '') &&
-        !!lienChecked &&
-        (enfantPrenomEl && enfantPrenomEl.value.trim() !== '') &&
-        (enfantNomEl && enfantNomEl.value.trim() !== '');
+    /* Check required header fields.
+       Generic: enumerate every .parent-meta-required input (the SAME class is
+       set by both render branches — info_fields and legacy — exactly on the
+       fields that are required). Group by name so a radio group counts once,
+       and validate per group: radio = at least one checked, text/date = value
+       non-empty. */
+    let allHeaderFilled = true;
+    const requiredGroups = {};
+    document.querySelectorAll('.parent-meta-required').forEach(el => {
+        if (!el.name) return;
+        (requiredGroups[el.name] = requiredGroups[el.name] || []).push(el);
+    });
+    for (const name in requiredGroups) {
+        const els = requiredGroups[name];
+        const isRadio = els[0].type === 'radio';
+        const ok = isRadio
+            ? els.some(el => el.checked)
+            : els.some(el => (el.value || '').trim() !== '');
+        if (!ok) { allHeaderFilled = false; break; }
+    }
 
     const allDone = (answered === total) && allHeaderFilled;
 

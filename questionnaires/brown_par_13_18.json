@@ -8,9 +8,7 @@
   "parent_mode": true,
   "omission_default_score": 1,
   "info_fields": [
-    {"id": "_meta_evaluateur",     "label": "Nom de l'évaluateur",  "type": "text", "required": true,  "placeholder": "Prénom Nom"},
-    {"id": "_meta_date_evaluation","label": "Date de l'évaluation", "type": "date", "required": false},
-    {"id": "_meta_lien_parente",   "label": "Lien de parenté",      "type": "text", "required": false, "placeholder": "ex : mère, père, tuteur"}
+    {"id": "_meta_evaluateur", "label": "Nom du répondant", "type": "text", "required": true, "placeholder": "Prénom Nom"}
   ],
   "instructions": "Lisez chaque énoncé avec attention. Pour chaque énoncé, choisissez la réponse qui décrit le mieux l'intensité des sensations ou des comportements que vous pensez avoir été vécus comme problématiques par votre enfant au cours des six derniers mois. Ce problème peut être considéré comme très important, moyennement important ou peu important, qu'il se soit produit fréquemment ou rarement pendant cette période.",
   "sous_echelles": [
