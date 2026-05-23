@@ -539,63 +539,110 @@ class NeuropsychologueService
 
             // Rich format (HAD-like): items stored under 'items' key, keyed by item id
             } elseif (isset($questions['items'])) {
-                $items = $questions['items'];
-                usort($items, static fn($a, $b) => ($a['ordre_affichage'] ?? 0) <=> ($b['ordre_affichage'] ?? 0));
+                $isBrown = str_starts_with($q->getSlug(), 'brown_');
 
-                // Build cluster label map
-                $clusterLabels = [];
-                foreach ($questions['sous_echelles'] ?? [] as $se) {
-                    $clusterLabels[$se['id']] = strtoupper($se['label']);
-                }
+                if ($isBrown) {
+                    // ─── Format UNIFIÉ Brown : clusters + TOTAL, AUCUN détail item ───
+                    // (lit les _score_<cluster> déjà stockés ; aucun recalcul)
+                    if (isset($questions['sous_echelles'])) {
+                        $hasCorrection      = !empty($questions['omission_correction']);
+                        $hasOmissionDefault = isset($questions['omission_default_score']);
+                        $totalMax           = 0;
+                        foreach ($questions['sous_echelles'] as $se) {
+                            $seScore    = $answers['_score_' . $se['id']] ?? '—';
+                            $totalMax  += (int) ($se['score_max'] ?? 0);
+                            $line       = '   ' . $se['label'] . ' : ' . $seScore . ' / ' . $se['score_max'];
 
-                // Sub-scores
-                if (isset($questions['sous_echelles'])) {
-                    $hasCorrection      = !empty($questions['omission_correction']);
-                    $hasOmissionDefault = isset($questions['omission_default_score']);
-                    $totalBrut          = 0;
-                    foreach ($questions['sous_echelles'] as $se) {
-                        $seScore = $answers['_score_' . $se['id']] ?? '—';
-                        if (is_numeric($seScore)) {
-                            $totalBrut += $seScore;
+                            if ($hasCorrection || $hasOmissionDefault) {
+                                $omKey = '_score_' . $se['id'] . '_omissions';
+                                if (array_key_exists($omKey, $answers)) {
+                                    $line .= ' | Omissions : ' . $answers[$omKey];
+                                }
+                            }
+                            if ($hasCorrection) {
+                                $corrKey = '_score_' . $se['id'] . '_corrected';
+                                if (array_key_exists($corrKey, $answers)) {
+                                    $corrected = $answers[$corrKey] !== null ? $answers[$corrKey] : 'Non interprétable';
+                                    $line .= ' | Corrigé : ' . $corrected;
+                                }
+                            }
+                            $lines[] = $line;
                         }
-                        if ($hasCorrection) {
-                            $omissions = $answers['_score_' . $se['id'] . '_omissions'] ?? '—';
-                            $corrKey   = '_score_' . $se['id'] . '_corrected';
-                            $corrected = array_key_exists($corrKey, $answers)
-                                ? ($answers[$corrKey] !== null ? $answers[$corrKey] : 'Non interprétable')
-                                : '—';
-                            $lines[] = '   ' . $se['label'] . ' — Brut : ' . $seScore . ' / ' . $se['score_max']
-                                . ' | Omissions : ' . $omissions
-                                . ' | Corrigé : ' . $corrected;
-                        } elseif ($hasOmissionDefault) {
-                            $omissions = $answers['_score_' . $se['id'] . '_omissions'] ?? '—';
-                            $lines[] = '   ' . $se['label'] . ' — Brut : ' . $seScore . ' / ' . $se['score_max']
-                                . ' | Omissions (×' . $questions['omission_default_score'] . ') : ' . $omissions;
-                        } else {
-                            $lines[] = '   Score ' . $se['label'] . ' : ' . $seScore . ' / ' . $se['score_max'];
-                        }
-                    }
-                    if ($hasCorrection || $hasOmissionDefault) {
-                        $lines[] = '   TOTAL BRUT : ' . $totalBrut;
-                    }
-                    $lines[] = '';
-                }
 
-                foreach ($items as $item) {
-                    $rawAnswer = $answers[$item['id']] ?? null;
-                    // Resolve numeric value to label
-                    $answerLabel = '—';
-                    if ($rawAnswer !== null) {
-                        foreach ($item['options'] ?? [] as $opt) {
-                            if ((string) $opt['valeur'] === (string) $rawAnswer) {
-                                $answerLabel = $opt['label'] . ' (' . $opt['valeur'] . ')';
-                                break;
+                        // Ligne TOTAL systématique (corrige l'incohérence où elle manquait pour
+                        // 5 des 7 Brown). max_total = somme des score_max des 6 clusters.
+                        $totalScore = $response->getScore();
+                        $pct = ($totalMax > 0 && $totalScore !== null)
+                            ? (int) round($totalScore / $totalMax * 100)
+                            : null;
+                        $lines[] = '   TOTAL : ' . ($totalScore ?? '—') . ' / ' . $totalMax
+                            . ($pct !== null ? ' (' . $pct . ' %)' : '');
+                        $lines[] = '';
+                    }
+                    // PAS de boucle item-par-item pour Brown (spec : « rien d'autre »).
+                    // Les réponses brutes restent dans QuestionnaireResponse.answers
+                    // pour traçabilité, simplement non exportées.
+
+                } else {
+                    // ─── Comportement existant pour les autres "rich format" (HAD…) ───
+                    $items = $questions['items'];
+                    usort($items, static fn($a, $b) => ($a['ordre_affichage'] ?? 0) <=> ($b['ordre_affichage'] ?? 0));
+
+                    // Build cluster label map
+                    $clusterLabels = [];
+                    foreach ($questions['sous_echelles'] ?? [] as $se) {
+                        $clusterLabels[$se['id']] = strtoupper($se['label']);
+                    }
+
+                    // Sub-scores
+                    if (isset($questions['sous_echelles'])) {
+                        $hasCorrection      = !empty($questions['omission_correction']);
+                        $hasOmissionDefault = isset($questions['omission_default_score']);
+                        $totalBrut          = 0;
+                        foreach ($questions['sous_echelles'] as $se) {
+                            $seScore = $answers['_score_' . $se['id']] ?? '—';
+                            if (is_numeric($seScore)) {
+                                $totalBrut += $seScore;
+                            }
+                            if ($hasCorrection) {
+                                $omissions = $answers['_score_' . $se['id'] . '_omissions'] ?? '—';
+                                $corrKey   = '_score_' . $se['id'] . '_corrected';
+                                $corrected = array_key_exists($corrKey, $answers)
+                                    ? ($answers[$corrKey] !== null ? $answers[$corrKey] : 'Non interprétable')
+                                    : '—';
+                                $lines[] = '   ' . $se['label'] . ' — Brut : ' . $seScore . ' / ' . $se['score_max']
+                                    . ' | Omissions : ' . $omissions
+                                    . ' | Corrigé : ' . $corrected;
+                            } elseif ($hasOmissionDefault) {
+                                $omissions = $answers['_score_' . $se['id'] . '_omissions'] ?? '—';
+                                $lines[] = '   ' . $se['label'] . ' — Brut : ' . $seScore . ' / ' . $se['score_max']
+                                    . ' | Omissions (×' . $questions['omission_default_score'] . ') : ' . $omissions;
+                            } else {
+                                $lines[] = '   Score ' . $se['label'] . ' : ' . $seScore . ' / ' . $se['score_max'];
                             }
                         }
+                        if ($hasCorrection || $hasOmissionDefault) {
+                            $lines[] = '   TOTAL BRUT : ' . $totalBrut;
+                        }
+                        $lines[] = '';
                     }
-                    $clusterLabel = $clusterLabels[$item['sous_echelle'] ?? ''] ?? strtoupper($item['sous_echelle'] ?? '?');
-                    $lines[] = '   [' . $clusterLabel . '] ' . $item['texte'];
-                    $lines[] = '      → ' . $answerLabel;
+
+                    foreach ($items as $item) {
+                        $rawAnswer = $answers[$item['id']] ?? null;
+                        // Resolve numeric value to label
+                        $answerLabel = '—';
+                        if ($rawAnswer !== null) {
+                            foreach ($item['options'] ?? [] as $opt) {
+                                if ((string) $opt['valeur'] === (string) $rawAnswer) {
+                                    $answerLabel = $opt['label'] . ' (' . $opt['valeur'] . ')';
+                                    break;
+                                }
+                            }
+                        }
+                        $clusterLabel = $clusterLabels[$item['sous_echelle'] ?? ''] ?? strtoupper($item['sous_echelle'] ?? '?');
+                        $lines[] = '   [' . $clusterLabel . '] ' . $item['texte'];
+                        $lines[] = '      → ' . $answerLabel;
+                    }
                 }
             } else {
                 // Legacy simple format

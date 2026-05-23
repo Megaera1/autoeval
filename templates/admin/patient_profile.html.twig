@@ -386,6 +386,7 @@
                     {% set isAdolescent = q.questions.adolescent_mode is defined and q.questions.adolescent_mode %}
                     {% set isDiva = q.questions.diva_mode is defined and q.questions.diva_mode %}
                     {% set isRaads = q.questions.raads_mode is defined and q.questions.raads_mode %}
+                    {% set isBrown = q.slug starts with 'brown_' %}
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="heading-{{ i }}">
                             <button class="accordion-button {{ i > 0 ? 'collapsed' : '' }}"
@@ -479,10 +480,148 @@
                                     </form>
                                 </div>
 
+                                {# ══════════════════════════════════════════════════════════════════
+                                   BROWN — Affichage UNIFIÉ (toutes variantes : child / teacher /
+                                   parent / adolescent). Exclusivement clusters + ligne TOTAL,
+                                   AUCUN détail item par item. Lit les sous-scores déjà calculés
+                                   en base (_score_<cluster>) ; aucun recalcul.
+                                   ══════════════════════════════════════════════════════════════ #}
+                                {% if isBrown %}
+                                    {% set meta = response.answers ?? {} %}
+                                    {# Nom du répondant — fallback robuste pour id=6 (parent legacy : prenom + nom) #}
+                                    {% set respondent = meta['_meta_evaluateur'] ?? '' %}
+                                    {% if respondent|trim == '' %}
+                                        {% set respondent = ((meta['_meta_evaluateur_prenom'] ?? '') ~ ' ' ~ (meta['_meta_evaluateur_nom'] ?? ''))|trim %}
+                                    {% endif %}
+
+                                    <div class="ens-meta-block px-4 py-3">
+                                        <span class="text-muted">Nom du répondant :</span>
+                                        <strong>{{ respondent != '' ? respondent : '—' }}</strong>
+                                    </div>
+
+                                    {% if response.isComplete and q.questions.sous_echelles is defined %}
+                                        {% set hasCorrection      = q.questions.omission_correction is defined and q.questions.omission_correction %}
+                                        {% set hasOmissionDefault = q.questions.omission_default_score is defined %}
+                                        {% set showOmissions      = hasCorrection or hasOmissionDefault %}
+
+                                        {% set totalMax = 0 %}
+                                        {% for se in q.questions.sous_echelles %}
+                                            {% set totalMax = totalMax + se.score_max %}
+                                        {% endfor %}
+                                        {% set totalScore = response.score ?? 0 %}
+                                        {% set totalPct = totalMax > 0 ? (totalScore / totalMax * 100)|round : 0 %}
+
+                                        <div class="px-4 py-3 border-bottom">
+                                            <h5 class="mb-3 fw-bold" style="color:#2c7be5;">Scores par cluster</h5>
+                                            <div class="row g-4">
+                                                {# Tableau #}
+                                                <div class="col-md-7">
+                                                    <table class="table table-sm mb-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Cluster</th>
+                                                                <th class="text-center">Brut</th>
+                                                                {% if showOmissions %}<th class="text-center">Omissions</th>{% endif %}
+                                                                {% if hasCorrection %}<th class="text-center">Corrigé</th>{% endif %}
+                                                                <th class="text-center">Max</th>
+                                                                <th class="text-center">%</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for se in q.questions.sous_echelles %}
+                                                                {% set seScore = meta['_score_' ~ se.id] ?? 0 %}
+                                                                {% set pct = se.score_max > 0 ? (seScore / se.score_max * 100)|round : 0 %}
+                                                                <tr>
+                                                                    <td>{{ se.label }}</td>
+                                                                    <td class="text-center fw-bold">{{ seScore }}</td>
+                                                                    {% if showOmissions %}
+                                                                        {% set omissions = meta['_score_' ~ se.id ~ '_omissions'] ?? '—' %}
+                                                                        <td class="text-center">
+                                                                            {% if omissions is not same as('—') and omissions > 2 %}
+                                                                                <span class="badge bg-danger-lt text-danger">{{ omissions }}</span>
+                                                                            {% else %}{{ omissions }}{% endif %}
+                                                                        </td>
+                                                                    {% endif %}
+                                                                    {% if hasCorrection %}
+                                                                        {% set corrKey = '_score_' ~ se.id ~ '_corrected' %}
+                                                                        <td class="text-center fw-bold">
+                                                                            {% if meta[corrKey] is not defined %}<span class="text-muted">—</span>
+                                                                            {% elseif meta[corrKey] is null %}<span class="text-danger small">N/I</span>
+                                                                            {% else %}{{ meta[corrKey] }}{% endif %}
+                                                                        </td>
+                                                                    {% endif %}
+                                                                    <td class="text-center text-muted">{{ se.score_max }}</td>
+                                                                    <td class="text-center">
+                                                                        <span class="badge small
+                                                                            {% if pct <= 33 %}ens-badge-low
+                                                                            {% elseif pct <= 66 %}ens-badge-mid
+                                                                            {% else %}ens-badge-high{% endif %}">{{ pct }}%</span>
+                                                                    </td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                            <tr class="table-light fw-bold">
+                                                                <td>TOTAL</td>
+                                                                <td class="text-center">{{ totalScore }}</td>
+                                                                {% if showOmissions %}<td class="text-center text-muted">—</td>{% endif %}
+                                                                {% if hasCorrection %}<td class="text-center text-muted">—</td>{% endif %}
+                                                                <td class="text-center text-muted">{{ totalMax }}</td>
+                                                                <td class="text-center">
+                                                                    <span class="badge small
+                                                                        {% if totalPct <= 33 %}ens-badge-low
+                                                                        {% elseif totalPct <= 66 %}ens-badge-mid
+                                                                        {% else %}ens-badge-high{% endif %}">{{ totalPct }}%</span>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                    {% if hasCorrection %}
+                                                        <p class="text-muted small mt-2 mb-0">N/I = Non interprétable (omissions &gt; 2)</p>
+                                                    {% endif %}
+                                                </div>
+
+                                                {# Bar chart #}
+                                                <div class="col-md-5">
+                                                    <div class="d-flex flex-column gap-3">
+                                                        {% for se in q.questions.sous_echelles %}
+                                                            {% set seScore = meta['_score_' ~ se.id] ?? 0 %}
+                                                            {% set pct = se.score_max > 0 ? (seScore / se.score_max * 100)|round : 0 %}
+                                                            <div>
+                                                                <div class="d-flex justify-content-between small mb-1">
+                                                                    <span class="fw-semibold">{{ se.label }}</span>
+                                                                    <span class="text-muted">{{ seScore }} / {{ se.score_max }}</span>
+                                                                </div>
+                                                                <div class="ens-cluster-bar">
+                                                                    <div class="ens-cluster-bar-fill
+                                                                        {% if pct <= 33 %}ens-score-low
+                                                                        {% elseif pct <= 66 %}ens-score-mid
+                                                                        {% else %}ens-score-high{% endif %}"
+                                                                        style="width:{{ pct }}%;"
+                                                                        role="progressbar"
+                                                                        aria-valuenow="{{ pct }}"
+                                                                        aria-valuemin="0" aria-valuemax="100"
+                                                                        aria-label="{{ se.label }} : {{ pct }}%"></div>
+                                                                </div>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="px-4 py-2 text-muted small d-flex gap-4 border-top">
+                                        <span>Commencé : {{ response.startedAt ? response.startedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                        <span>Terminé : {{ response.completedAt ? response.completedAt|date('d/m/Y à H:i') : '—' }}</span>
+                                    </div>
+
                                 {# ══════════════════════════════════════════════
                                    TEACHER MODE — Brown ENS rich display
+                                   (conservé pour d'éventuels futurs questionnaires non-Brown
+                                    utilisant teacher_mode ; aujourd'hui code mort puisque tous
+                                    les teacher_mode existants sont des Brown court-circuités
+                                    par la branche isBrown au-dessus)
                                    ══════════════════════════════════════════════ #}
-                                {% if isTeacher %}
+                                {% elseif isTeacher %}
                                     {% set meta = response.answers %}
                                     {% set durationLabels = {
                                         'moins_1_mois': "< 1 mois",
