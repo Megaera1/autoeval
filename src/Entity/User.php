@@ -269,11 +269,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Age actuel. Utilisé pour l'affichage dans le profil admin.
+     * Age actuel. Utilisé pour l'affichage dans le profil admin
+     * et pour le routage de l'anamnèse (enfant / adolescent / adulte / senior).
+     *
+     * Priorité : birthDate (source de vérité dynamique). Si birthDate est
+     * absente — anciens comptes créés avant l'ajout du champ — on retombe
+     * sur la colonne `age` stockée à l'inscription, par compatibilité
+     * historique. Retourne null seulement si AUCUNE des deux n'est connue.
      */
     public function getCurrentAge(): ?int
     {
-        return $this->getAgeAtDate(new \DateTimeImmutable());
+        $age = $this->getAgeAtDate(new \DateTimeImmutable());
+        if ($age === null && $this->age !== null) {
+            return $this->age;
+        }
+
+        return $age;
     }
 
     public function getFullName(): string
