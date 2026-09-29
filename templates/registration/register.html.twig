@@ -38,6 +38,11 @@
             <div class="card-body">
                 {{ form_start(registrationForm, {'attr': {'autocomplete': 'on', 'novalidate': 'novalidate'}}) }}
 
+                    {# Erreurs globales du formulaire (ex. jeton CSRF invalide) #}
+                    {% for error in registrationForm.vars.errors %}
+                        <div class="alert alert-danger mb-3">{{ error.message }}</div>
+                    {% endfor %}
+
                     {# Ligne 1 : Prénom / Nom #}
                     <div class="row">
                         <div class="col-12 col-sm-6 mb-3">
@@ -215,6 +220,12 @@
                             </label>
                             {{ form_errors(registrationForm.consent) }}
                         </div>
+                    </div>
+
+                    {# Honeypot anti-bot : invisible pour les humains, ne pas supprimer #}
+                    <div aria-hidden="true" style="position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden;">
+                        <label for="{{ registrationForm.contactRef.vars.id }}">Ne pas remplir ce champ</label>
+                        {{ form_widget(registrationForm.contactRef) }}
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">

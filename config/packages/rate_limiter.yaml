@@ -1,0 +1,12 @@
+framework:
+    rate_limiter:
+        # Tentatives d'inscription par adresse IP
+        registration:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '1 hour'
+        # Demandes de renvoi du lien de vérification par adresse IP
+        verification_resend:
+            policy: 'sliding_window'
+            limit: 3
+            interval: '1 hour'

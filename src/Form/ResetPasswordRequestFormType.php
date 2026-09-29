@@ -17,8 +17,8 @@ class ResetPasswordRequestFormType extends AbstractType
             'label' => 'Adresse e-mail',
             'attr' => ['placeholder' => 'votre@email.fr', 'autofocus' => true],
             'constraints' => [
-                new NotBlank(['message' => 'Veuillez saisir votre adresse e-mail.']),
-                new Email(['message' => 'Veuillez saisir un email valide.']),
+                new NotBlank(message: 'Veuillez saisir votre adresse e-mail.'),
+                new Email(message: 'Veuillez saisir un email valide.'),
             ],
         ]);
     }

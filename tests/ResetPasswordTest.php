@@ -4,17 +4,20 @@ namespace App\Tests;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class ResetPasswordTest extends WebTestCase
 {
+    private KernelBrowser $client;
     private EntityManagerInterface $em;
 
     protected function setUp(): void
     {
-        $kernel = self::bootKernel();
-        $this->em = $kernel->getContainer()->get('doctrine')->getManager();
+        // Le client démarre le kernel : ne pas appeler bootKernel() en plus
+        $this->client = static::createClient();
+        $this->em = static::getContainer()->get('doctrine')->getManager();
     }
 
     protected function tearDown(): void
@@ -29,7 +32,7 @@ class ResetPasswordTest extends WebTestCase
         parent::tearDown();
     }
 
-    private function createTestUser(string $resetToken = null, \DateTimeImmutable $expiresAt = null): User
+    private function createTestUser(?string $resetToken = null, ?\DateTimeImmutable $expiresAt = null): User
     {
         $container = static::getContainer();
         $hasher = $container->get(UserPasswordHasherInterface::class);
@@ -54,7 +57,7 @@ class ResetPasswordTest extends WebTestCase
 
     public function testInvalidTokenReturns404(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         $client->request('GET', '/reset-password/this-token-does-not-exist-at-all');
 
         $this->assertResponseStatusCodeSame(404);
@@ -65,7 +68,7 @@ class ResetPasswordTest extends WebTestCase
         $expiredToken = bin2hex(random_bytes(16)) . '_expired';
         $this->createTestUser($expiredToken, new \DateTimeImmutable('-1 hour'));
 
-        $client = static::createClient();
+        $client = $this->client;
         $client->request('GET', '/reset-password/' . $expiredToken);
 
         // Should redirect to the request page
@@ -83,7 +86,7 @@ class ResetPasswordTest extends WebTestCase
         $user = $this->createTestUser($validToken, new \DateTimeImmutable('+1 hour'));
         $userId = $user->getId();
 
-        $client = static::createClient();
+        $client = $this->client;
 
         // GET: form is displayed
         $crawler = $client->request('GET', '/reset-password/' . $validToken);
@@ -123,7 +126,7 @@ class ResetPasswordTest extends WebTestCase
         $token = bin2hex(random_bytes(16)) . '_once';
         $this->createTestUser($token, new \DateTimeImmutable('+1 hour'));
 
-        $client = static::createClient();
+        $client = $this->client;
         $crawler = $client->request('GET', '/reset-password/' . $token);
         $this->assertResponseIsSuccessful();
 

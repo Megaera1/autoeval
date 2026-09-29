@@ -21,13 +21,13 @@ class PatientProfileFormType extends AbstractType
             ->add('firstName', TextType::class, [
                 'label' => 'Prénom',
                 'constraints' => [
-                    new NotBlank(['message' => 'Veuillez saisir votre prénom.']),
+                    new NotBlank(message: 'Veuillez saisir votre prénom.'),
                 ],
             ])
             ->add('lastName', TextType::class, [
                 'label' => 'Nom',
                 'constraints' => [
-                    new NotBlank(['message' => 'Veuillez saisir votre nom.']),
+                    new NotBlank(message: 'Veuillez saisir votre nom.'),
                 ],
             ])
             ->add('birthDate', DateType::class, [
@@ -36,7 +36,7 @@ class PatientProfileFormType extends AbstractType
                 'input' => 'datetime_immutable',
                 'html5' => true,
                 'constraints' => [
-                    new NotBlank(['message' => 'Veuillez saisir votre date de naissance.']),
+                    new NotBlank(message: 'Veuillez saisir votre date de naissance.'),
                 ],
             ])
             ->add('gender', ChoiceType::class, [

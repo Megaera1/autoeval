@@ -54,40 +54,6 @@
             padding-bottom: 8px;
             border-bottom: 2px solid #e8f0fc;
         }
-        .credentials {
-            background-color: #f0f5ff;
-            border: 1px solid #c5d8fa;
-            border-radius: 8px;
-            padding: 20px 24px;
-            margin: 0 0 20px;
-        }
-        .credentials table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .credentials td {
-            padding: 6px 0;
-            font-size: 14px;
-        }
-        .credentials td:first-child {
-            color: #666;
-            width: 130px;
-            font-weight: 600;
-        }
-        .credentials td:last-child {
-            color: #1a1a2e;
-            font-weight: 700;
-            font-family: 'Courier New', monospace;
-        }
-        .credentials-notice {
-            font-size: 12px;
-            color: #7a6000;
-            background-color: #fff8e1;
-            border-left: 4px solid #f6c23e;
-            padding: 10px 14px;
-            border-radius: 4px;
-            margin-top: 12px;
-        }
         ol {
             padding-left: 20px;
             margin: 0;
@@ -147,28 +113,13 @@
 
         <p>Bonjour <strong>{{ user.firstName }}</strong>,</p>
         <p>
-            Votre espace patient AutoEval vient d'être créé. Vous trouverez ci-dessous vos identifiants
-            de connexion. Conservez-les précieusement.
+            Votre adresse email est confirmée : votre espace patient AutoEval est maintenant actif.
+            Connectez-vous avec l'adresse <strong>{{ user.email }}</strong> et le mot de passe
+            que vous avez choisi lors de votre inscription.
         </p>
-
-        <h2>Vos identifiants de connexion</h2>
-        <div class="credentials">
-            <table>
-                <tr>
-                    <td>Adresse e-mail</td>
-                    <td>{{ user.email }}</td>
-                </tr>
-                <tr>
-                    <td>Mot de passe</td>
-                    <td>{{ plainPassword }}</td>
-                </tr>
-            </table>
-            <div class="credentials-notice">
-                &#9432;&nbsp; Ces identifiants sont affichés <strong>une seule fois</strong> dans cet email.
-                Notez-les ou conservez cet email dans un endroit sûr.
-                Vous pourrez modifier votre mot de passe à tout moment depuis la page de connexion.
-            </div>
-        </div>
+        <p>
+            Mot de passe oublié ? Vous pouvez le réinitialiser à tout moment depuis la page de connexion.
+        </p>
 
         <h2>Comment fonctionne AutoEval ?</h2>
         <ol>

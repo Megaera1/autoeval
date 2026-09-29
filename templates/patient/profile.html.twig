@@ -132,6 +132,11 @@
     <div class="col-md-9">
         {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
 
+        {# Erreurs globales du formulaire (ex. jeton CSRF invalide) #}
+        {% for error in form.vars.errors %}
+            <div class="alert alert-danger mb-3">{{ error.message }}</div>
+        {% endfor %}
+
         {# Section 1 : Informations personnelles #}
         <div class="card mb-4">
             <div class="card-header">

@@ -43,7 +43,9 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->where('u.roles LIKE :role')
             ->setParameter('role', '%ROLE_PATIENT%')
             ->andWhere('u.roles NOT LIKE :adminRole')
-            ->setParameter('adminRole', '%ROLE_NEUROPSYCHOLOGUE%');
+            ->setParameter('adminRole', '%ROLE_NEUROPSYCHOLOGUE%')
+            // Comptes dont l'email n'est pas confirmé : invisibles côté neuropsychologue
+            ->andWhere('u.isVerified = true');
 
         if ($search !== '') {
             $q = '%' . mb_strtolower($search) . '%';
@@ -59,5 +61,24 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         };
 
         return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * Comptes patients jamais confirmés, créés avant la date donnée.
+     *
+     * @return User[]
+     */
+    public function findUnverifiedPatientsCreatedBefore(\DateTimeImmutable $before): array
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.isVerified = false')
+            ->andWhere('u.createdAt < :before')
+            ->andWhere('u.roles LIKE :role')
+            ->andWhere('u.roles NOT LIKE :adminRole')
+            ->setParameter('before', $before)
+            ->setParameter('role', '%ROLE_PATIENT%')
+            ->setParameter('adminRole', '%ROLE_NEUROPSYCHOLOGUE%')
+            ->getQuery()
+            ->getResult();
     }
 }

@@ -26,22 +26,22 @@ class RegistrationFormType extends AbstractType
         $builder
             ->add('email', EmailType::class, [
                 'constraints' => [
-                    new NotBlank(['message' => 'Veuillez saisir votre email.']),
-                    new Email(['message' => 'Veuillez saisir un email valide.']),
+                    new NotBlank(message: 'Veuillez saisir votre email.'),
+                    new Email(message: 'Veuillez saisir un email valide.'),
                 ],
             ])
             ->add('firstName', TextType::class, [
                 'label' => 'Prénom',
                 'constraints' => [
-                    new NotBlank(['message' => 'Veuillez saisir votre prénom.']),
-                    new Length(['min' => 2, 'max' => 100]),
+                    new NotBlank(message: 'Veuillez saisir votre prénom.'),
+                    new Length(min: 2, max: 100),
                 ],
             ])
             ->add('lastName', TextType::class, [
                 'label' => 'Nom',
                 'constraints' => [
-                    new NotBlank(['message' => 'Veuillez saisir votre nom.']),
-                    new Length(['min' => 2, 'max' => 100]),
+                    new NotBlank(message: 'Veuillez saisir votre nom.'),
+                    new Length(min: 2, max: 100),
                 ],
             ])
             ->add('birthDate', DateType::class, [
@@ -51,10 +51,10 @@ class RegistrationFormType extends AbstractType
                 'input'       => 'datetime_immutable',
                 'html5'       => true,
                 'constraints' => [
-                    new LessThan([
-                        'value'   => 'today',
-                        'message' => 'La date de naissance doit être dans le passé.',
-                    ]),
+                    new LessThan(
+                        value: 'today',
+                        message: 'La date de naissance doit être dans le passé.',
+                    ),
                 ],
             ])
             ->add('gender', ChoiceType::class, [
@@ -72,7 +72,7 @@ class RegistrationFormType extends AbstractType
                 'required' => true,
                 'label' => false,
                 'constraints' => [
-                    new IsTrue(['message' => 'Vous devez accepter la charte pour continuer.']),
+                    new IsTrue(message: 'Vous devez accepter la charte pour continuer.'),
                 ],
             ])
             ->add('plainPassword', RepeatedType::class, [
@@ -82,13 +82,21 @@ class RegistrationFormType extends AbstractType
                 'second_options' => ['label' => 'Confirmer le mot de passe'],
                 'invalid_message' => 'Les mots de passe ne correspondent pas.',
                 'constraints' => [
-                    new NotBlank(['message' => 'Veuillez saisir un mot de passe.']),
-                    new Length([
-                        'min' => 8,
-                        'minMessage' => 'Le mot de passe doit contenir au moins {{ limit }} caractères.',
-                        'max' => 4096,
-                    ]),
+                    new NotBlank(message: 'Veuillez saisir un mot de passe.'),
+                    new Length(
+                        min: 8,
+                        minMessage: 'Le mot de passe doit contenir au moins {{ limit }} caractères.',
+                        max: 4096,
+                    ),
                 ],
+            ])
+            // Honeypot anti-bot : champ masqué en CSS, un humain le laisse vide.
+            // Vérifié dans RegistrationController (rejet silencieux s'il est rempli).
+            ->add('contactRef', TextType::class, [
+                'mapped' => false,
+                'required' => false,
+                'label' => false,
+                'attr' => ['autocomplete' => 'off', 'tabindex' => '-1'],
             ]);
     }
 

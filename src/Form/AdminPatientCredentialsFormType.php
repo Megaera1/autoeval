@@ -19,8 +19,8 @@ class AdminPatientCredentialsFormType extends AbstractType
             ->add('email', EmailType::class, [
                 'label' => 'Adresse email',
                 'constraints' => [
-                    new NotBlank(['message' => 'L\'email est obligatoire.']),
-                    new Email(['message' => 'L\'adresse email « {{ value }} » n\'est pas valide.']),
+                    new NotBlank(message: 'L\'email est obligatoire.'),
+                    new Email(message: 'L\'adresse email « {{ value }} » n\'est pas valide.'),
                 ],
                 'attr' => ['autocomplete' => 'off'],
             ])

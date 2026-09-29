@@ -28,16 +28,16 @@ class ResetPasswordFormType extends AbstractType
             ],
             'invalid_message' => 'Les mots de passe ne correspondent pas.',
             'constraints' => [
-                new NotBlank(['message' => 'Veuillez saisir un mot de passe.']),
-                new Length([
-                    'min' => 8,
-                    'minMessage' => 'Le mot de passe doit contenir au moins {{ limit }} caractères.',
-                    'max' => 4096,
-                ]),
-                new Regex([
-                    'pattern' => '/\d/',
-                    'message' => 'Le mot de passe doit contenir au moins un chiffre.',
-                ]),
+                new NotBlank(message: 'Veuillez saisir un mot de passe.'),
+                new Length(
+                    min: 8,
+                    minMessage: 'Le mot de passe doit contenir au moins {{ limit }} caractères.',
+                    max: 4096,
+                ),
+                new Regex(
+                    pattern: '/\d/',
+                    message: 'Le mot de passe doit contenir au moins un chiffre.',
+                ),
             ],
         ]);
     }
