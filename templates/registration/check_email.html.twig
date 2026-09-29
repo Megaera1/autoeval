@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Vérifiez vos emails — AutoEval{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block page_wrapper %}
+<div class="page page-center" style="min-height: 100vh; background-color: #f4f6fa;">
+    <div class="container container-tight py-5">
+
+        {% for type, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="alert alert-{{ type == 'error' ? 'danger' : type }} alert-dismissible mb-3">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        <div class="card shadow-sm" style="border-radius: 12px; max-width: 420px; margin: 0 auto;">
+
+            <div class="card-body text-center pt-5 pb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-mail-check mb-3" width="52" height="52" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c7be5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M11 19h-6a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v6"/>
+                    <path d="M3 7l9 6l9 -6"/>
+                    <path d="M15 19l2 2l4 -4"/>
+                </svg>
+                <h1 class="h2 fw-bold mb-3" style="color: #2c7be5;">Vérifiez vos emails</h1>
+                <p class="text-muted mb-3">
+                    Un email vient de vous être envoyé à l'adresse indiquée. Suivez ses instructions
+                    pour activer votre espace patient : vous pourrez ensuite vous connecter.
+                </p>
+                <p class="text-muted small mb-4">
+                    Le lien est valable 24 heures. Pensez à vérifier vos courriers indésirables (spams).
+                </p>
+                <a href="{{ path('app_login') }}" class="btn btn-primary w-100 mb-3">Aller à la page de connexion</a>
+                <a href="{{ path('app_verify_email_resend') }}" class="text-muted small">
+                    Vous n'avez rien reçu ? <span class="text-primary">Renvoyer le lien</span>
+                </a>
+            </div>
+
+        </div>
+
+        <p class="text-center text-muted small mt-4">
+            AutoEval &copy; 2025 — Usage clinique exclusif
+        </p>
+
+    </div>
+</div>
+{% endblock %}
